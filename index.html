@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奕鈞老師的國文課 - 雲端分組控制台 v3</title>
+    <style>
+        :root {
+            --primary: #2563eb; 
+            --secondary: #059669;
+            --accent: #f59e0b;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --highlight: #ef4444; /* 抽籤紅框顏色 */
+        }
+
+        * { box-sizing: border-box; font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; padding: 0; background-color: var(--bg); color: #1e293b; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* HEADER */
+        header {
+            background: var(--card-bg); padding: 0.8rem 1rem; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 50; flex-shrink: 0;
+        }
+        .brand { font-size: 1.1rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .controls { display: flex; gap: 8px; }
+        
+        .toggle-btn {
+            background: #e2e8f0; border: none; padding: 0.4rem 0.8rem; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px;
+        }
+        .toggle-btn.active { background: var(--primary); color: white; }
+        .toggle-btn.active-green { background: var(--secondary); color: white; }
+
+        /* NAV */
+        nav { background: #e2e8f0; display: flex; justify-content: center; gap: 0.5rem; padding: 0.4rem; flex-shrink: 0; }
+        .nav-item {
+            padding: 0.4rem 1.2rem; border: none; background: transparent; 
+            font-weight: 600; color: #64748b; cursor: pointer; border-radius: 6px;
+        }
+        .nav-item.active { background: var(--card-bg); color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+        /* MAIN CONTENT */
+        main { flex: 1; overflow-y: auto; padding: 1rem; position: relative; scroll-behavior: smooth; }
+        .view-section { display: none; padding-bottom: 80px; } /* Space for FAB */
+        .view-section.active { display: block; animation: fadeIn 0.3s; }
+
+        /* DASHBOARD GRID */
+        .dashboard-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;
+        }
+        .group-card {
+            background: var(--card-bg); border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            overflow: hidden; border-top: 4px solid var(--primary); display: flex; flex-direction: column;
+            transition: transform 0.2s; border: 3px solid transparent; /* Prepare for highlight */
+        }
+        .group-card.lottery-active {
+            border-color: var(--highlight); box-shadow: 0 0 15px var(--highlight); transform: scale(1.02); z-index: 10;
+        }
+
+        .group-header {
+            padding: 0.8rem; background: #f1f5f9; border-bottom: 1px solid #e2e8f0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .group-name { font-weight: 700; font-size: 1.1rem; }
+        .score-control { display: flex; align-items: center; gap: 5px; }
+        .score-display { font-size: 1.3rem; font-weight: 800; color: var(--primary); min-width: 40px; text-align: center; }
+        
+        .btn-circle {
+            width: 28px; height: 28px; border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold;
+            transition: 0.1s;
+        }
+        .btn-circle:active { transform: scale(0.9); }
+        .btn-minus { background: #fee2e2; color: var(--danger); }
+        .btn-plus { background: #dbeafe; color: var(--primary); }
+
+        /* MEMBER ROWS */
+        .member-list { padding: 0.5rem; flex: 1; }
+        .member-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.5rem; border-radius: 6px; border-bottom: 1px solid #f1f5f9;
+            border: 2px solid transparent; /* Prepare for highlight */
+        }
+        .member-row:last-child { border-bottom: none; }
+        .member-row.lottery-active {
+            border-color: var(--highlight); background: #fff1f2;
+        }
+        .member-name { font-weight: 500; font-size: 1rem; color: #334155; }
+        .member-score { font-size: 1.1rem; font-weight: 700; color: #64748b; width: 30px; text-align: center;}
+
+        /* ADMIN STYLES */
+        .admin-box { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+        .admin-section-title { border-left: 4px solid var(--primary); padding-left: 10px; margin-top: 0; margin-bottom: 1rem; color: #1e293b; }
+        
+        .form-control { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; }
+        textarea.form-control { resize: vertical; min-height: 120px; font-family: inherit; }
+        
+        .manual-group-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .manual-group-item { background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .manual-group-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
+
+        /* FLOATING ACTION BUTTON (LOTTERY) */
+        .fab-container {
+            position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column-reverse; gap: 10px; z-index: 100;
+        }
+        .fab-main {
+            width: 60px; height: 60px; border-radius: 30px; background: var(--accent); color: white;
+            border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 24px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: transform 0.2s;
+        }
+        .fab-main:active { transform: scale(0.9); }
+        .fab-menu {
+            display: none; flex-direction: column; gap: 10px; align-items: flex-end;
+        }
+        .fab-container:hover .fab-menu, .fab-menu.show { display: flex; }
+        .fab-item {
+            background: white; color: #1e293b; padding: 10px 15px; border-radius: 20px; border: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px;
+            white-space: nowrap;
+        }
+        .fab-item:hover { background: #f1f5f9; }
+
+        /* MODALS & UTILS */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
+        .modal { background: white; padding: 2rem; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .winner-text { font-size: 2rem; font-weight: 900; color: var(--primary); margin: 1rem 0; word-break: keep-all; }
+        
+        #toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px;
+            font-size: 0.9rem; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 200;
+        }
+        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none;}
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <span>📚 奕鈞老師的分組課</span>
+        <div id="sync-spinner" class="spinner" title="同步中..."></div>
+    </div>
+    <div class="controls">
+        <button id="toggle-link" class="toggle-btn active" onclick="app.toggleLink()">
+            🔄 分數連動 <span id="link-status">ON</span>
+        </button>
+        <button id="toggle-sound" class="toggle-btn active-green" onclick="app.toggleSound()">
+            🔊 音效
+        </button>
+    </div>
+</header>
+
+<nav>
+    <button class="nav-item active" onclick="app.switchView('dashboard')">分組看板</button>
+    <button class="nav-item" onclick="app.switchView('admin')">後台設定</button>
+</nav>
+
+<main>
+    <!-- VIEW: DASHBOARD -->
+    <section id="view-dashboard" class="view-section active">
+        <div id="groups-container" class="dashboard-grid">
+            <!-- Groups injected here -->
+        </div>
+    </section>
+
+    <!-- VIEW: ADMIN -->
+    <section id="view-admin" class="view-section">
+        
+        <!-- 1. 快速隨機分組區 -->
+        <div class="admin-box">
+            <h3 class="admin-section-title">⚡ 快速隨機分組 (輸入全班名單)</h3>
+            <p style="font-size:0.9rem; color:#64748b; margin-top:0;">將全班名單貼在此處，系統會自動打亂並分配到下方各組。</p>
+            <textarea id="bulk-names" class="form-control" placeholder="李白&#10;杜甫&#10;白居易... (一行一個名字)"></textarea>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <label>分組數量：</label>
+                <input type="number" id="group-count-bulk" value="6" min="1" max="12" style="width: 60px; padding: 8px; border:1px solid #ccc; border-radius:6px;">
+                <button class="toggle-btn active" onclick="app.admin.autoRandomGroup()">
+                    🎲 執行隨機分組
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. 手動微調區 -->
+        <div class="admin-box">
+            <h3 class="admin-section-title">👥 手動分組微調</h3>
+            <p style="font-size:0.9rem; color:#64748b; margin-top:0;">可直接編輯下方的組名與名單 (支援剪下貼上)。</p>
+            <div id="manual-group-container" class="manual-group-grid">
+                <!-- Manual Edit Textareas -->
+            </div>
+            <button class="toggle-btn active" onclick="app.admin.saveManualGroups()" style="margin-top: 15px; width: 100%; justify-content: center; padding: 12px; font-size:1rem;">
+                💾 儲存所有設定
+            </button>
+        </div>
+
+        <!-- 3. 雲端與資料區 -->
+        <div class="admin-box">
+            <h3 class="admin-section-title">☁️ 雲端同步與資料</h3>
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom:5px; font-weight:bold;">Google Apps Script 網址</label>
+                <input type="text" id="gas-url" class="form-control" placeholder="https://script.google.com/..." onchange="app.save()">
+                <button class="toggle-btn" onclick="app.sync.manualSync()">立即手動同步</button>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px; padding-top:10px; border-top:1px solid #eee;">
+                <button class="toggle-btn" style="background: #64748b; color: white;" onclick="app.admin.resetScores()">歸零分數</button>
+                <button class="toggle-btn" style="background: #059669; color: white;" onclick="app.admin.exportCSV()">匯出 Excel</button>
+            </div>
+        </div>
+
+    </section>
+</main>
+
+<!-- FLOATING LOTTERY BUTTONS -->
+<div class="fab-container">
+    <button class="fab-main" onclick="document.querySelector('.fab-menu').classList.toggle('show')">🎲</button>
+    <div class="fab-menu">
+        <button class="fab-item" onclick="app.lottery.start('group')">🏰 抽小組</button>
+        <button class="fab-item" onclick="app.lottery.start('person')">👤 抽個人</button>
+        <button class="fab-item" onclick="app.lottery.start('person-in-group')">🎯 指定組內</button>
+    </div>
+</div>
+
+<!-- WINNER MODAL -->
+<div id="modal-winner" class="modal-overlay" onclick="this.classList.remove('open')">
+    <div class="modal" onclick="event.stopPropagation()">
+        <div style="font-size: 3rem;">🎉</div>
+        <h3>幸運得主</h3>
+        <div id="winner-name" class="winner-text">---</div>
+        <button class="toggle-btn active" style="margin: 0 auto;" onclick="document.getElementById('modal-winner').classList.remove('open')">確定</button>
+    </div>
+</div>
+
+<!-- GROUP SELECT MODAL -->
+<div id="modal-group-select" class="modal-overlay">
+    <div class="modal">
+        <h3>請選擇要抽籤的組別</h3>
+        <div id="group-select-list" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; margin:15px 0;"></div>
+        <button class="toggle-btn" onclick="document.getElementById('modal-group-select').classList.remove('open')">取消</button>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/**
+ * 奕鈞老師的國文課 - 核心邏輯 v3
+ */
+
+const AppState = {
+    groups: [],
+    settings: { linked: true, sound: true, gasUrl: '' }
+};
+
+// 簡單音效系統
+const AudioSys = {
+    ctx: null,
+    playTone: function(freq, type, dur) {
+        if (!AppState.settings.sound) return;
+        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = type; o.frequency.value = freq;
+        g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+        o.connect(g); g.connect(this.ctx.destination);
+        o.start(); o.stop(this.ctx.currentTime + dur);
+    },
+    play: function(key) {
+        switch(key) {
+            case 'tick': this.playTone(400, 'square', 0.05); break;
+            case 'win': 
+                this.playTone(523, 'sine', 0.1); 
+                setTimeout(()=>this.playTone(659, 'sine', 0.1), 100); 
+                setTimeout(()=>this.playTone(784, 'sine', 0.3), 200); 
+                break;
+            case 'click': this.playTone(800, 'sine', 0.08); break;
+        }
+    }
+};
+
+const app = {
+    init: function() {
+        // 預設 6 組空資料
+        for(let i=0; i<6; i++) AppState.groups.push({name: `第${i+1}組`, score:0, members:[]});
+        
+        this.loadLocal();
+        this.renderDashboard();
+        this.admin.renderManualGroups(); // 確保後台也有資料
+        
+        if (AppState.settings.gasUrl) this.sync.pull();
+    },
+
+    loadLocal: function() {
+        const d = localStorage.getItem('classDataV3');
+        if (d) {
+            const p = JSON.parse(d);
+            AppState.groups = p.groups || [];
+            AppState.settings = p.settings || AppState.settings;
+            document.getElementById('gas-url').value = AppState.settings.gasUrl || '';
+            this.updateUI();
+        }
+    },
+
+    save: function() {
+        AppState.settings.gasUrl = document.getElementById('gas-url').value.trim();
+        localStorage.setItem('classDataV3', JSON.stringify(AppState));
+        this.sync.push(); 
+    },
+
+    updateUI: function() {
+        document.getElementById('link-status').innerText = AppState.settings.linked ? 'ON' : 'OFF';
+        document.getElementById('toggle-link').className = `toggle-btn ${AppState.settings.linked ? 'active' : ''}`;
+        document.getElementById('toggle-sound').className = `toggle-btn ${AppState.settings.sound ? 'active-green' : ''}`;
+    },
+
+    toggleLink: function() {
+        AppState.settings.linked = !AppState.settings.linked;
+        this.updateUI(); this.save();
+    },
+    toggleSound: function() {
+        AppState.settings.sound = !AppState.settings.sound;
+        this.updateUI(); this.save();
+    },
+    switchView: function(v) {
+        document.querySelectorAll('.view-section').forEach(e => e.classList.remove('active'));
+        document.getElementById('view-'+v).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+        event.target.classList.add('active');
+        // 切換到 Admin 時，重新渲染手動分組區，確保是最新的
+        if(v === 'admin') this.admin.renderManualGroups();
+    },
+
+    // --- Scoring Logic ---
+    scoreGroup: function(idx, delta) {
+        AppState.groups[idx].score += delta;
+        AudioSys.play('click');
+        this.renderDashboard(); this.save();
+    },
+    scoreMember: function(gIdx, mIdx, delta) {
+        AppState.groups[gIdx].members[mIdx].score += delta;
+        if (AppState.settings.linked) {
+            AppState.groups[gIdx].score += delta;
+        }
+        AudioSys.play('click');
+        this.renderDashboard(); this.save();
+    },
+
+    renderDashboard: function() {
+        const c = document.getElementById('groups-container');
+        c.innerHTML = '';
+        AppState.groups.forEach((g, gIdx) => {
+            let mHtml = '';
+            g.members.forEach((m, mIdx) => {
+                mHtml += `
+                <div class="member-row" id="m-${gIdx}-${mIdx}">
+                    <span class="member-name">${m.name}</span>
+                    <div class="score-control">
+                        <button class="btn-circle btn-minus" onclick="app.scoreMember(${gIdx},${mIdx},-1)">-</button>
+                        <span class="member-score">${m.score}</span>
+                        <button class="btn-circle btn-plus" onclick="app.scoreMember(${gIdx},${mIdx},1)">+</button>
+                    </div>
+                </div>`;
+            });
+
+            const div = document.createElement('div');
+            div.className = 'group-card';
+            div.id = `g-${gIdx}`;
+            div.innerHTML = `
+                <div class="group-header">
+                    <span class="group-name">${g.name}</span>
+                    <div class="score-control">
+                        <button class="btn-circle btn-minus" onclick="app.scoreGroup(${gIdx},-1)">-</button>
+                        <span class="score-display">${g.score}</span>
+                        <button class="btn-circle btn-plus" onclick="app.scoreGroup(${gIdx},1)">+</button>
+                    </div>
+                </div>
+                <div class="member-list">${mHtml}</div>
+            `;
+            c.appendChild(div);
+        });
+    },
+
+    // --- Cloud Sync ---
+    sync: {
+        manualSync: function() { app.save(); app.sync.pull(); },
+        push: function() {
+            const url = AppState.settings.gasUrl;
+            if (!url) return;
+            document.getElementById('sync-spinner').style.display = 'block';
+            fetch(url, {
+                method: 'POST', mode: 'no-cors',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'save', data: AppState})
+            }).then(() => {
+                setTimeout(() => document.getElementById('sync-spinner').style.display = 'none', 1000);
+            }).catch(e => console.error(e));
+        },
+        pull: function() {
+            const url = AppState.settings.gasUrl;
+            if (!url) return;
+            document.getElementById('sync-spinner').style.display = 'block';
+            fetch(url + '?action=read', { method: 'GET', redirect: 'follow' })
+            .then(r => r.json())
+            .then(data => {
+                if(data && data.groups) {
+                    AppState.groups = data.groups;
+                    AppState.settings = data.settings || AppState.settings;
+                    app.renderDashboard();
+                    app.admin.renderManualGroups();
+                    app.updateUI();
+                    app.toast("資料已同步");
+                }
+                document.getElementById('sync-spinner').style.display = 'none';
+            })
+            .catch(e => {
+                console.log("Sync error", e);
+                document.getElementById('sync-spinner').style.display = 'none';
+            });
+        }
+    },
+
+    toast: function(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg; t.style.opacity = 1;
+        setTimeout(() => t.style.opacity = 0, 2000);
+    },
+
+    // --- Admin Logic ---
+    admin: {
+        // 渲染手動分組的輸入框
+        renderManualGroups: function() {
+            const c = document.getElementById('manual-group-container');
+            c.innerHTML = '';
+            AppState.groups.forEach((g, idx) => {
+                const names = g.members.map(m => m.name).join('\n');
+                const div = document.createElement('div');
+                div.className = 'manual-group-item';
+                div.innerHTML = `
+                    <div class="manual-group-header">
+                        <input type="text" value="${g.name}" id="gn-${idx}" style="width:100px; padding:2px; border:1px solid #ddd; border-radius:4px;">
+                        <span>(總分: ${g.score})</span>
+                    </div>
+                    <textarea class="form-control" id="gt-${idx}" style="height:150px; margin-bottom:0;">${names}</textarea>
+                `;
+                c.appendChild(div);
+            });
+            // 順便把組數填回上方輸入框，方便使用者知道現在有幾組
+            document.getElementById('group-count-bulk').value = AppState.groups.length;
+        },
+
+        // 從手動輸入框儲存回 AppState
+        saveManualGroups: function() {
+            AppState.groups.forEach((g, idx) => {
+                const newName = document.getElementById(`gn-${idx}`).value;
+                const text = document.getElementById(`gt-${idx}`).value;
+                // 解析名字，並嘗試保留舊的分數
+                const newMembers = text.split(/\n/).map(n=>n.trim()).filter(n=>n).map(n => {
+                    const exist = g.members.find(old => old.name === n);
+                    // 這裡做一個全域搜尋也可以，避免換組後分數歸零？
+                    // 目前邏輯：如果該組本來就有這個人，保留分數。如果是新來的，0分。
+                    return { name: n, score: exist ? exist.score : 0 };
+                });
+                g.name = newName;
+                g.members = newMembers;
+            });
+            app.renderDashboard();
+            app.save();
+            app.toast("所有設定已儲存");
+        },
+
+        // 自動隨機分組
+        autoRandomGroup: function() {
+            if(!confirm("確定要重新隨機分組嗎？現有分組將被覆蓋！")) return;
+            
+            const rawText = document.getElementById('bulk-names').value;
+            const count = parseInt(document.getElementById('group-count-bulk').value) || 6;
+            
+            const names = rawText.split(/\r?\n/).map(n => n.trim()).filter(n => n);
+            if (names.length === 0) { alert("名單是空的！"); return; }
+            
+            // 洗牌
+            for (let i = names.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [names[i], names[j]] = [names[j], names[i]];
+            }
+
+            // 建立新組別結構
+            const newGroups = [];
+            for (let i = 0; i < count; i++) {
+                newGroups.push({ name: `第 ${i + 1} 組`, score: 0, members: [] });
+            }
+
+            // 分配
+            names.forEach((name, index) => {
+                const groupIndex = index % count;
+                newGroups[groupIndex].members.push({ name: name, score: 0 });
+            });
+
+            AppState.groups = newGroups;
+            
+            // 更新畫面
+            this.renderManualGroups(); // 更新手動區
+            app.renderDashboard(); // 更新首頁
+            app.save();
+            app.toast(`已將 ${names.length} 人隨機分為 ${count} 組`);
+        },
+
+        resetScores: function() {
+            if(!confirm("確定歸零所有分數？")) return;
+            AppState.groups.forEach(g => { g.score=0; g.members.forEach(m=>m.score=0); });
+            app.save(); app.renderDashboard(); app.admin.renderManualGroups();
+        },
+        exportCSV: function() {
+             let csv = "\uFEFF組別,姓名,個人分,組總分\n";
+             AppState.groups.forEach(g => {
+                 g.members.forEach(m => csv += `${g.name},${m.name},${m.score},${g.score}\n`);
+             });
+             const a = document.createElement('a');
+             a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+             a.download = '成績單.csv'; a.click();
+        }
+    },
+
+    // --- Lottery (Visual) ---
+    lottery: {
+        timer: null,
+        
+        start: function(mode) {
+            // 收起選單
+            document.querySelector('.fab-menu').classList.remove('show');
+            app.switchView('dashboard'); // 強制回首頁看動畫
+
+            if (mode === 'person-in-group') {
+                this.showGroupSelect();
+                return;
+            }
+
+            // 建立目標列表
+            let targets = []; 
+            if (mode === 'group') {
+                targets = AppState.groups.map((g, i) => ({ id: `g-${i}`, name: g.name }));
+            } else if (mode === 'person') {
+                AppState.groups.forEach((g, gi) => {
+                    g.members.forEach((m, mi) => {
+                        targets.push({ id: `m-${gi}-${mi}`, name: m.name });
+                    });
+                });
+            }
+
+            this.runAnimation(targets);
+        },
+
+        showGroupSelect: function() {
+            const list = document.getElementById('group-select-list');
+            list.innerHTML = '';
+            AppState.groups.forEach((g, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'toggle-btn';
+                btn.style.width = '100%';
+                btn.style.padding = '10px';
+                btn.innerText = g.name;
+                btn.onclick = () => {
+                    document.getElementById('modal-group-select').classList.remove('open');
+                    // 該組組員
+                    const targets = g.members.map((m, mi) => ({ id: `m-${i}-${mi}`, name: m.name }));
+                    this.runAnimation(targets);
+                };
+                list.appendChild(btn);
+            });
+            document.getElementById('modal-group-select').classList.add('open');
+        },
+
+        runAnimation: function(targets) {
+            if (targets.length === 0) { alert('名單為空！'); return; }
+            
+            // 清除舊狀態
+            document.querySelectorAll('.lottery-active').forEach(e => e.classList.remove('lottery-active'));
+            
+            let count = 0;
+            const max = 20 + Math.floor(Math.random() * 10); // 跑幾格
+            let speed = 80;
+            let currentIdx = Math.floor(Math.random() * targets.length);
+
+            const step = () => {
+                // Remove prev
+                const prevEl = document.getElementById(targets[currentIdx].id);
+                if(prevEl) prevEl.classList.remove('lottery-active');
+                
+                // Next
+                currentIdx = (currentIdx + 1) % targets.length;
+                const nextTarget = targets[currentIdx];
+                const nextEl = document.getElementById(nextTarget.id);
+                
+                if(nextEl) {
+                    nextEl.classList.add('lottery-active');
+                    // 確保捲動到可見範圍
+                    nextEl.scrollIntoView({behavior: "auto", block: "center"});
+                    AudioSys.play('tick');
+                }
+
+                count++;
+                if (count < max) {
+                    // 減速效果
+                    if (count > max - 8) speed += 60;
+                    if (count > max - 4) speed += 100;
+                    this.timer = setTimeout(step, speed);
+                } else {
+                    // Winner
+                    AudioSys.play('win');
+                    document.getElementById('winner-name').innerText = nextTarget.name;
+                    document.getElementById('modal-winner').classList.add('open');
+                    // 保持最後一個紅框亮著
+                }
+            };
+            
+            step();
+        }
+    }
+};
+
+app.init();
+</script>
+</body>
+</html>
