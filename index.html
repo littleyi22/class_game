@@ -2,312 +2,323 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>奕鈞老師的國文課 - 雲端分組控制台 v4</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>奕鈞老師的國文課 v7.0</title>
     <style>
         :root {
-            --primary: #2563eb; 
-            --secondary: #059669;
-            --accent: #f59e0b;
-            --danger: #dc2626;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --highlight: #ef4444;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.8);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            --primary: #007AFF;
+            --danger: #FF3B30;
+            --success: #34C759;
+            --text: #1d1d1f;
+            --text-sec: #6e6e73;
         }
 
-        * { box-sizing: border-box; font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; padding: 0; background-color: var(--bg); color: #1e293b; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            margin: 0; padding: 0; 
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); 
+            height: 100vh; /* 固定高度 */
+            width: 100vw;
+            color: var(--text); 
+            display: flex; flex-direction: column; overflow: hidden; /* 防止整頁捲動 */
+        }
+
+        /* 背景氣泡 */
+        .bg-blobs { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.6; animation: float 10s infinite ease-in-out; }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #fff1eb; animation-duration: 12s; }
+        .blob-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: #a8edea; animation-duration: 15s; }
+        @keyframes float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(20px, -20px); } }
+
+        /* Glass Style */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: var(--glass-border); box-shadow: var(--glass-shadow);
+            border-radius: 20px;
+        }
 
         /* HEADER */
-        header {
-            background: var(--card-bg); padding: 0.8rem 1rem; display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 50; flex-shrink: 0;
-        }
-        .brand { font-size: 1.1rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        header { padding: 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 100; margin: 10px; border-radius: 24px; flex-shrink: 0; }
+        .brand { font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
         .controls { display: flex; gap: 8px; }
-        
-        .toggle-btn {
-            background: #e2e8f0; border: none; padding: 0.4rem 0.8rem; border-radius: 20px;
-            font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px;
+
+        /* BUTTONS */
+        .btn {
+            border: none; padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 0.95rem;
+            cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;
+            background: rgba(255,255,255,0.6); color: var(--text); box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .toggle-btn.active { background: var(--primary); color: white; }
-        .toggle-btn.active-green { background: var(--secondary); color: white; }
+        .btn:active { transform: scale(0.96); background: rgba(255,255,255,0.9); }
+        .btn.primary { background: var(--primary); color: white; }
+        .btn.danger { background: var(--danger); color: white; }
+        .btn.success { background: var(--success); color: white; }
 
         /* NAV */
-        nav { background: #e2e8f0; display: flex; justify-content: center; gap: 0.5rem; padding: 0.4rem; flex-shrink: 0; }
+        nav { display: flex; justify-content: center; gap: 8px; padding: 0 10px; margin-bottom: 5px; flex-shrink: 0; z-index: 90; }
         .nav-item {
-            padding: 0.4rem 1.2rem; border: none; background: transparent; 
-            font-weight: 600; color: #64748b; cursor: pointer; border-radius: 6px;
+            padding: 10px 30px; border: none; background: rgba(255,255,255,0.4); 
+            font-weight: 600; color: var(--text-sec); cursor: pointer; border-radius: 14px;
+            transition: 0.2s;
         }
-        .nav-item.active { background: var(--card-bg); color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .nav-item.active { background: white; color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.1); transform: translateY(-2px); }
 
-        /* GUEST MODE STYLES */
-        body.mode-guest .admin-only { display: none !important; }
-        body.mode-guest .score-control button { display: none !important; }
-        body.mode-guest .fab-container { display: none !important; }
-
-        /* MAIN CONTENT */
-        main { flex: 1; overflow-y: auto; padding: 1rem; position: relative; scroll-behavior: smooth; }
-        .view-section { display: none; padding-bottom: 80px; }
+        /* MAIN SCROLL AREA (修正捲動問題) */
+        main { 
+            flex: 1; 
+            overflow-y: auto; /* 允許垂直捲動 */
+            -webkit-overflow-scrolling: touch; /* iOS 滑動慣性 */
+            padding: 10px; padding-bottom: 100px;
+            position: relative; z-index: 10; 
+        }
+        
+        .view-section { display: none; }
         .view-section.active { display: block; animation: fadeIn 0.3s; }
 
-        /* DASHBOARD GRID */
-        .dashboard-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;
-        }
-        .group-card {
-            background: var(--card-bg); border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            overflow: hidden; border-top: 4px solid var(--primary); display: flex; flex-direction: column;
-            transition: transform 0.2s; border: 3px solid transparent;
-        }
-        .group-card.lottery-active {
-            border-color: var(--highlight); box-shadow: 0 0 15px var(--highlight); transform: scale(1.02); z-index: 10;
-        }
-
-        .group-header {
-            padding: 0.8rem; background: #f1f5f9; border-bottom: 1px solid #e2e8f0;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .group-name { font-weight: 700; font-size: 1.1rem; }
-        .score-control { display: flex; align-items: center; gap: 5px; }
-        .score-display { font-size: 1.3rem; font-weight: 800; color: var(--primary); min-width: 40px; text-align: center; }
-        
+        /* DASHBOARD */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        .group-card { display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .group-header { padding: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .score-display { font-size: 1.4rem; font-weight: 800; color: var(--primary); min-width: 40px; text-align: center; }
         .btn-circle {
-            width: 28px; height: 28px; border-radius: 50%; border: none; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold;
-            transition: 0.1s;
+            width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold;
+            background: white; color: var(--text); box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .btn-circle:active { transform: scale(0.9); }
-        .btn-minus { background: #fee2e2; color: var(--danger); }
-        .btn-plus { background: #dbeafe; color: var(--primary); }
+        .member-list { padding: 10px; }
+        .member-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.03); }
 
-        /* MEMBER ROWS */
-        .member-list { padding: 0.5rem; flex: 1; }
-        .member-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0.5rem; border-radius: 6px; border-bottom: 1px solid #f1f5f9;
-            border: 2px solid transparent; 
+        /* BUZZER CONTROLLER (嵌入首頁) */
+        .buzzer-panel {
+            margin-bottom: 20px; padding: 15px; text-align: center;
+            border-left: 5px solid var(--primary);
         }
-        .member-row:last-child { border-bottom: none; }
-        .member-row.lottery-active {
-            border-color: var(--highlight); background: #fff1f2;
-        }
-        .member-name { font-weight: 500; font-size: 1rem; color: #334155; }
-        .member-score { font-size: 1.1rem; font-weight: 700; color: #64748b; width: 30px; text-align: center;}
-
-        /* ADMIN STYLES */
-        .admin-box { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
-        .admin-section-title { border-left: 4px solid var(--primary); padding-left: 10px; margin-top: 0; margin-bottom: 1rem; color: #1e293b; }
-        .form-control { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; }
-        textarea.form-control { resize: vertical; min-height: 120px; font-family: inherit; }
+        .buzzer-actions { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
         
-        .manual-group-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem; }
-        .manual-group-item { background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .manual-group-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
+        /* ADMIN BOX */
+        .admin-box { margin-bottom: 20px; padding: 20px; position: relative; z-index: 20; }
+        .form-control {
+            width: 100%; padding: 12px; border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.6);
+            border-radius: 12px; font-size: 1rem; outline: none; margin-bottom: 10px;
+        }
+        .manual-group-item { background: rgba(255,255,255,0.5); padding: 15px; border-radius: 16px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.6); }
 
-        /* FAB & MODALS */
-        .fab-container {
-            position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column-reverse; gap: 10px; z-index: 100;
+        /* BUZZER STUDENT SCREEN */
+        #student-buzzer-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(255,255,255,0.95);
         }
-        .fab-main {
-            width: 60px; height: 60px; border-radius: 30px; background: var(--accent); color: white;
-            border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 24px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; transition: transform 0.2s;
+        .buzzer-btn-main {
+            width: 200px; height: 200px; border-radius: 50%; border: 8px solid rgba(255,255,255,0.5);
+            background: linear-gradient(135deg, #FF3B30 0%, #FF2D55 100%);
+            box-shadow: 0 15px 35px rgba(255, 59, 48, 0.4); color: white; font-size: 2rem; font-weight: 800;
+            cursor: pointer; display: none;
         }
-        .fab-main:active { transform: scale(0.9); }
-        .fab-menu {
-            display: none; flex-direction: column; gap: 10px; align-items: flex-end;
-        }
-        .fab-container:hover .fab-menu, .fab-menu.show { display: flex; }
-        .fab-item {
-            background: white; color: #1e293b; padding: 10px 15px; border-radius: 20px; border: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap;
-        }
-        .fab-item:hover { background: #f1f5f9; }
+        .buzzer-btn-main:active { transform: scale(0.95); }
 
+        /* MODALS & UTILS */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
-            display: none; justify-content: center; align-items: center; z-index: 1000;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 3000;
         }
         .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
-        .modal { background: white; padding: 2rem; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        
-        /* LOGIN OVERLAY */
-        #login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f1f5f9;
-            z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .login-card {
-            background: white; padding: 2.5rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            width: 90%; max-width: 380px; text-align: center;
-        }
-        .login-btn {
-            width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px;
-        }
+        .modal { width: 90%; max-width: 380px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .admin-only { display: inherit; }
+        body.mode-guest .admin-only { display: none !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
         
         #toast {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px;
-            font-size: 0.9rem; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 200;
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8); color: white; padding: 10px 20px; border-radius: 30px;
+            font-size: 0.9rem; pointer-events: none; opacity: 0; transition: 0.3s; z-index: 5000;
         }
-        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none;}
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; box-shadow: 0 0 5px #ccc;}
+        .status-dot.ok { background: var(--success); box-shadow: 0 0 8px var(--success); }
     </style>
 </head>
 <body>
 
-<!-- LOGIN OVERLAY -->
-<div id="login-overlay">
-    <div class="login-card">
-        <h2 style="color: var(--primary); margin-top: 0;">🔒 身份驗證</h2>
-        <p style="color: #64748b; margin-bottom: 20px;">請選擇您的登入身份</p>
-        
-        <div style="margin-bottom: 20px;">
-            <input type="password" id="password-input" class="form-control" placeholder="請輸入老師密碼" style="text-align: center;">
-            <button class="login-btn" style="background: var(--primary); color: white;" onclick="app.auth.loginAdmin()">👨‍🏫 老師登入</button>
-        </div>
-        
-        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
-            <button class="login-btn" style="background: #e2e8f0; color: #475569;" onclick="app.auth.loginGuest()">👀 訪客模式 (僅觀看)</button>
+<div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999; display:flex; justify-content:center; align-items:center; background:rgba(255,255,255,0.6); backdrop-filter:blur(20px);">
+    <div class="glass modal">
+        <h2 style="margin-top:0;">🔒 課堂登入</h2>
+        <input type="password" id="password-input" class="form-control" placeholder="老師密碼 (預設: 1234)" style="text-align:center;">
+        <button class="btn primary" style="width:100%; margin-top:10px; padding:14px;" onclick="app.auth.loginAdmin()">我是老師</button>
+        <div style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(0,0,0,0.1);">
+            <button class="btn" style="width:100%; background:white;" onclick="app.auth.loginGuest()">我是學生 (訪客)</button>
         </div>
     </div>
 </div>
 
-<header>
+<!-- STUDENT SELECT -->
+<div id="modal-guest-select" class="modal-overlay">
+    <div class="glass modal">
+        <h3>👋 選擇組別</h3>
+        <div id="guest-group-list" style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto; margin-top:10px;"></div>
+    </div>
+</div>
+
+<!-- BUZZER SCREEN -->
+<div id="student-buzzer-screen">
+    <h1 id="buzzer-status-text">等待指令...</h1>
+    <p>您的組別: <strong id="my-group-name">--</strong></p>
+    <button id="buzzer-btn" class="buzzer-btn-main" onclick="app.buzzer.studentBuzz()">搶答!</button>
+    <button class="btn" style="margin-top:50px;" onclick="app.buzzer.exitStudentMode()">離開</button>
+</div>
+
+<header class="glass">
     <div class="brand">
-        <span>📚 奕鈞老師的分組課</span>
-        <div id="sync-spinner" class="spinner" title="同步中..."></div>
+        <span>📚 奕鈞老師的國文課</span>
+        <div class="status-dot" id="conn-dot"></div>
     </div>
     <div class="controls admin-only">
-        <button id="toggle-link" class="toggle-btn active" onclick="app.toggleLink()">
-            🔄 分數連動 <span id="link-status">ON</span>
-        </button>
-        <button id="toggle-sound" class="toggle-btn active-green" onclick="app.toggleSound()">
-            🔊 音效
-        </button>
-    </div>
-    <div class="controls" id="guest-indicator" style="display:none;">
-        <span style="font-size:0.8rem; background:#e2e8f0; padding:4px 8px; border-radius:4px; color:#64748b;">訪客模式 (自動更新中)</span>
+        <button class="btn" onclick="app.toggleLink()">連動 <strong id="link-status" style="margin-left:5px;">ON</strong></button>
+        <button class="btn" onclick="app.toggleSound()">音效</button>
     </div>
 </header>
 
 <nav class="admin-only">
-    <button class="nav-item active" onclick="app.switchView('dashboard')">分組看板</button>
-    <button class="nav-item" onclick="app.switchView('admin')">後台設定</button>
+    <button id="nav-dashboard" class="nav-item active" onclick="app.switchView('dashboard')">分組與搶答</button>
+    <button id="nav-admin" class="nav-item" onclick="app.switchView('admin')">後台設定</button>
 </nav>
 
 <main>
-    <!-- VIEW: DASHBOARD -->
+    <!-- 1. DASHBOARD & BUZZER (Merged) -->
     <section id="view-dashboard" class="view-section active">
-        <div id="groups-container" class="dashboard-grid">
-            <!-- Groups injected here -->
+        
+        <!-- BUZZER CONTROL PANEL (Admin Only) -->
+        <div class="glass buzzer-panel admin-only">
+            <h3 style="margin:0; display:flex; justify-content:center; align-items:center; gap:10px;">
+                🚨 搶答控制 
+                <span id="admin-buzzer-state" style="font-size:0.8rem; background:#eee; padding:2px 8px; border-radius:10px;">IDLE</span>
+            </h3>
+            <div class="buzzer-actions">
+                <button class="btn" style="background:#FFD60A;" onclick="app.buzzer.set('ready')">✋ 預備</button>
+                <button class="btn success" onclick="app.buzzer.set('go')">🚀 開始</button>
+                <button class="btn danger" onclick="app.buzzer.set('idle')">🛑 重置</button>
+            </div>
+            <!-- Results Area -->
+            <div id="buzzer-rank-list" style="margin-top:15px; font-weight:600; min-height:20px; color:var(--primary);"></div>
         </div>
+
+        <!-- Groups Grid -->
+        <div id="groups-container" class="dashboard-grid"></div>
     </section>
 
-    <!-- VIEW: ADMIN (Hidden for Guest) -->
+    <!-- 2. ADMIN SETTINGS -->
     <section id="view-admin" class="view-section admin-only">
-        <!-- 1. 快速隨機分組 -->
-        <div class="admin-box">
-            <h3 class="admin-section-title">⚡ 快速隨機分組</h3>
-            <textarea id="bulk-names" class="form-control" placeholder="在此貼上名單..."></textarea>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <label>分組數：</label>
-                <input type="number" id="group-count-bulk" value="6" min="1" max="12" style="width: 60px; padding: 8px; border:1px solid #ccc; border-radius:6px;">
-                <button class="toggle-btn active" onclick="app.admin.autoRandomGroup()">🎲 執行分組</button>
+        <!-- 手動分組 -->
+        <div class="glass admin-box">
+            <h3>👥 手動分組管理</h3>
+            <div id="manual-group-container"></div>
+            <button class="btn" style="width:100%; justify-content:center; margin-top:10px; border:1px dashed #aaa;" onclick="app.admin.addGroup()">+ 新增組別</button>
+            <button class="btn primary" style="width:100%; justify-content:center; margin-top:20px; padding:12px; font-size:1rem;" onclick="app.admin.saveManualGroups()">💾 儲存所有變更</button>
+        </div>
+
+        <!-- 快速分組 -->
+        <div class="glass admin-box">
+            <h3>⚡ 快速隨機分組</h3>
+            <textarea id="bulk-names" class="form-control" placeholder="貼上名單 (一行一個)..."></textarea>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="group-count" value="6" class="form-control" style="width:80px; text-align:center;">
+                <button class="btn" style="flex:1; justify-content:center;" onclick="app.admin.autoRandomGroup()">執行分組</button>
             </div>
         </div>
-        <!-- 2. 手動微調 -->
-        <div class="admin-box">
-            <h3 class="admin-section-title">👥 手動分組微調</h3>
-            <div id="manual-group-container" class="manual-group-grid"></div>
-            <button class="toggle-btn active" onclick="app.admin.saveManualGroups()" style="margin-top: 15px; width: 100%; justify-content: center; padding: 12px;">💾 儲存所有設定</button>
-        </div>
-        <!-- 3. 雲端與資料 -->
-        <div class="admin-box">
-            <h3 class="admin-section-title">☁️ 雲端同步與設定</h3>
-            <div style="margin-bottom: 1rem;">
-                <label style="display:block; margin-bottom:5px; font-weight:bold;">Google Apps Script 網址</label>
-                <input type="text" id="gas-url" class="form-control" placeholder="https://script.google.com/..." onchange="app.save()">
+
+        <!-- 雲端設定 -->
+        <div class="glass admin-box">
+            <h3>☁️ 連線設定</h3>
+            <div style="margin-bottom:10px; font-size:0.9rem; color:var(--text-sec);">
+                GAS 網址狀態: <span id="gas-url-status">🔴 尚未設定 (請在程式碼最後一行貼上)</span>
             </div>
-            <div style="margin-bottom: 1rem;">
-                <label style="display:block; margin-bottom:5px; font-weight:bold;">修改老師密碼</label>
-                <input type="text" id="admin-pass-setter" class="form-control" placeholder="預設: 1234">
-                <button class="toggle-btn" onclick="app.auth.updatePassword()">更新密碼</button>
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 20px; border-top:1px solid #eee; padding-top:10px;">
-                <button class="toggle-btn" style="background: #64748b; color: white;" onclick="app.admin.resetScores()">歸零分數</button>
-                <button class="toggle-btn" style="background: #059669; color: white;" onclick="app.admin.exportCSV()">匯出 Excel</button>
-            </div>
+            <button class="btn success" style="width:100%; justify-content:center;" onclick="app.sync.manualSync()">立即手動同步</button>
+            <button class="btn" style="width:100%; justify-content:center; margin-top:10px;" onclick="app.admin.exportCSV()">匯出 CSV</button>
         </div>
     </section>
 </main>
 
-<!-- FLOATING LOTTERY (Hidden for Guest) -->
-<div class="fab-container admin-only">
-    <button class="fab-main" onclick="document.querySelector('.fab-menu').classList.toggle('show')">🎲</button>
-    <div class="fab-menu">
-        <button class="fab-item" onclick="app.lottery.start('group')">🏰 抽小組</button>
-        <button class="fab-item" onclick="app.lottery.start('person')">👤 抽個人</button>
-        <button class="fab-item" onclick="app.lottery.start('person-in-group')">🎯 指定組內</button>
+<!-- FLOATING FAB -->
+<div class="fab-container admin-only" style="position:fixed; bottom:30px; right:30px; z-index:200;">
+    <div class="fab-menu" style="display:none; flex-direction:column; gap:10px; align-items:flex-end; margin-bottom:10px;">
+        <button class="btn" onclick="app.lottery.start('group')">🏰 抽小組</button>
+        <button class="btn" onclick="app.lottery.start('person')">👤 抽個人</button>
+    </div>
+    <button class="btn primary" style="width:60px; height:60px; border-radius:50%; font-size:24px; box-shadow:0 10px 20px rgba(0,0,0,0.2);" onclick="document.querySelector('.fab-menu').style.display = document.querySelector('.fab-menu').style.display=='flex'?'none':'flex'">🎲</button>
+</div>
+
+<!-- WINNER MODAL -->
+<div id="modal-winner" class="modal-overlay" onclick="this.classList.remove('open')">
+    <div class="glass modal" onclick="event.stopPropagation()">
+        <div style="font-size:4rem;">🎉</div>
+        <h2 id="winner-name">---</h2>
+        <button class="btn primary" onclick="document.getElementById('modal-winner').classList.remove('open')">恭喜！</button>
     </div>
 </div>
 
-<!-- MODALS -->
-<div id="modal-winner" class="modal-overlay" onclick="this.classList.remove('open')">
-    <div class="modal" onclick="event.stopPropagation()">
-        <div style="font-size: 3rem;">🎉</div>
-        <h3>幸運得主</h3>
-        <div id="winner-name" class="winner-text">---</div>
-        <button class="toggle-btn active" style="margin: 0 auto;" onclick="document.getElementById('modal-winner').classList.remove('open')">確定</button>
-    </div>
-</div>
-<div id="modal-group-select" class="modal-overlay">
-    <div class="modal">
-        <h3>請選擇要抽籤的組別</h3>
-        <div id="group-select-list" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; margin:15px 0;"></div>
-        <button class="toggle-btn" onclick="document.getElementById('modal-group-select').classList.remove('open')">取消</button>
-    </div>
-</div>
-<div id="toast"></div>
+<div id="toast">歡迎使用</div>
 
 <script>
 /**
- * 奕鈞老師的國文課 - 核心邏輯 v4 (Security & Guest Mode)
+ * 奕鈞老師的國文課 v7.0
+ * 
+ * ===============================================================
+ * 📢 請將您的 Google Apps Script (GAS) 網址貼在下方引號中
+ * ===============================================================
  */
+const PRE_CONFIG_URL = "https://script.google.com/macros/s/AKfycbwtX0PXMlu2oksFO8IqUuRoywceloA0aDSpQ0QVxo-VW4a9i6uUlJxH4Oq1QqvhWSEc/exec"; 
+// 範例："https://script.google.com/macros/s/xxxxxxxxx/exec"
+
 
 const AppState = {
     groups: [],
-    settings: { linked: true, sound: true, gasUrl: '', password: '1234' },
-    userMode: 'guest' // 'admin' or 'guest'
+    buzzer: { state: 'idle', results: [] },
+    settings: { linked: true, sound: true, gasUrl: PRE_CONFIG_URL, password: '1234' },
+    userMode: 'guest',
+    myGroup: null
 };
 
 const AudioSys = {
     ctx: null,
     playTone: function(freq, type, dur) {
         if (!AppState.settings.sound) return;
-        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const o = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        o.type = type; o.frequency.value = freq;
-        g.gain.setValueAtTime(0.1, this.ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
-        o.connect(g); g.connect(this.ctx.destination);
-        o.start(); o.stop(this.ctx.currentTime + dur);
+        try {
+            if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (this.ctx.state === 'suspended') this.ctx.resume();
+            const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+            o.type = type; o.frequency.value = freq;
+            g.gain.setValueAtTime(0.1, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+            o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + dur);
+        } catch(e) { console.error(e); }
     },
     play: function(key) {
-        // Guest mode usually silent unless lottery runs? keeping it simple
-        if(AppState.userMode === 'guest' && key !== 'win') return; 
+        if(AppState.userMode === 'guest' && key !== 'buzz') return; 
         switch(key) {
-            case 'tick': this.playTone(400, 'square', 0.05); break;
-            case 'win': this.playTone(523, 'sine', 0.1); setTimeout(()=>this.playTone(659, 'sine', 0.1), 100); setTimeout(()=>this.playTone(784, 'sine', 0.3), 200); break;
             case 'click': this.playTone(800, 'sine', 0.08); break;
+            case 'ready': this.playTone(440, 'triangle', 0.3); break;
+            case 'go': this.playTone(880, 'square', 0.5); break;
+            case 'win': this.playTone(523, 'sine', 0.1); setTimeout(()=>this.playTone(659, 'sine', 0.1), 100); break;
         }
     }
 };
 
 const app = {
     init: function() {
+        if(PRE_CONFIG_URL) {
+            AppState.settings.gasUrl = PRE_CONFIG_URL;
+            document.getElementById('gas-url-status').innerText = "✅ 已透過程式碼鎖定連線";
+            document.getElementById('gas-url-status').style.color = "var(--success)";
+            document.getElementById('gas-url-status').style.fontWeight = "bold";
+        }
         for(let i=0; i<6; i++) AppState.groups.push({name: `第${i+1}組`, score:0, members:[]});
         this.loadLocal();
         this.renderDashboard();
@@ -315,287 +326,271 @@ const app = {
 
     auth: {
         loginAdmin: function() {
-            const input = document.getElementById('password-input').value;
-            if (input === AppState.settings.password) {
-                AppState.userMode = 'admin';
-                app.auth.applyMode();
-            } else {
-                alert("密碼錯誤！");
-            }
+            if(document.getElementById('password-input').value === AppState.settings.password) {
+                AppState.userMode = 'admin'; this.applyMode();
+            } else alert("密碼錯誤");
         },
         loginGuest: function() {
-            AppState.userMode = 'guest';
-            app.auth.applyMode();
-            // Start Auto-Polling for Guest
-            app.sync.startPolling(); 
+            AppState.userMode = 'guest'; this.applyMode();
+            const list = document.getElementById('guest-group-list'); list.innerHTML='';
+            AppState.groups.forEach(g => {
+                const btn = document.createElement('button');
+                btn.className = 'btn'; btn.style.width='100%'; btn.style.justifyContent='center'; btn.innerText=g.name;
+                btn.onclick = () => { AppState.myGroup = g.name; document.getElementById('my-group-name').innerText=g.name; document.getElementById('modal-guest-select').classList.remove('open'); app.buzzer.enterStudentMode(); };
+                list.appendChild(btn);
+            });
+            document.getElementById('modal-guest-select').classList.add('open');
+            app.sync.startPolling(2000);
         },
         applyMode: function() {
             document.getElementById('login-overlay').style.display = 'none';
-            if (AppState.userMode === 'guest') {
+            if(AppState.userMode === 'guest') {
                 document.body.classList.add('mode-guest');
-                document.getElementById('guest-indicator').style.display = 'flex';
-                // Switch to dashboard incase they were on admin
                 app.switchView('dashboard');
             } else {
                 document.body.classList.remove('mode-guest');
-                document.getElementById('guest-indicator').style.display = 'none';
                 app.admin.renderManualGroups();
-                // Check if GAS URL is needed
-                if (AppState.settings.gasUrl) app.sync.pull();
-            }
-        },
-        updatePassword: function() {
-            const newPass = document.getElementById('admin-pass-setter').value.trim();
-            if(newPass) {
-                AppState.settings.password = newPass;
-                app.save();
-                app.toast("密碼已更新");
+                if(AppState.settings.gasUrl) app.sync.pull();
             }
         }
     },
 
     loadLocal: function() {
-        const d = localStorage.getItem('classDataV4');
-        if (d) {
+        const d = localStorage.getItem('classDataV7');
+        if(d) {
             const p = JSON.parse(d);
             AppState.groups = p.groups || [];
-            AppState.settings = Object.assign(AppState.settings, p.settings); // merge settings
-            document.getElementById('gas-url').value = AppState.settings.gasUrl || '';
-            document.getElementById('admin-pass-setter').value = AppState.settings.password;
+            if(p.settings) Object.assign(AppState.settings, p.settings);
+            if(PRE_CONFIG_URL) AppState.settings.gasUrl = PRE_CONFIG_URL;
+            AppState.buzzer = p.buzzer || {state:'idle', results:[]};
             this.updateUI();
         }
     },
 
     save: function() {
-        if (AppState.userMode === 'guest') return; // Guests can't save
-        AppState.settings.gasUrl = document.getElementById('gas-url').value.trim();
-        localStorage.setItem('classDataV4', JSON.stringify(AppState));
-        this.sync.push(); 
+        if(AppState.userMode === 'guest') return;
+        localStorage.setItem('classDataV7', JSON.stringify(AppState));
+        this.sync.push();
     },
 
     updateUI: function() {
         document.getElementById('link-status').innerText = AppState.settings.linked ? 'ON' : 'OFF';
-        document.getElementById('toggle-link').className = `toggle-btn ${AppState.settings.linked ? 'active' : ''}`;
-        document.getElementById('toggle-sound').className = `toggle-btn ${AppState.settings.sound ? 'active-green' : ''}`;
+        document.getElementById('link-status').style.color = AppState.settings.linked ? 'var(--primary)' : 'var(--text-sec)';
     },
-
+    
     toggleLink: function() { AppState.settings.linked = !AppState.settings.linked; this.updateUI(); this.save(); },
-    toggleSound: function() { AppState.settings.sound = !AppState.settings.sound; this.updateUI(); this.save(); },
+    toggleSound: function() { AppState.settings.sound = !AppState.settings.sound; this.save(); },
+    
     switchView: function(v) {
         document.querySelectorAll('.view-section').forEach(e => e.classList.remove('active'));
         document.getElementById('view-'+v).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-        if (event) event.target.classList.add('active');
-        if(v === 'admin' && AppState.userMode === 'admin') app.admin.renderManualGroups();
+        const navBtn = document.getElementById('nav-'+v);
+        if(navBtn) navBtn.classList.add('active');
+        if(v === 'admin') app.admin.renderManualGroups();
     },
 
-    // --- Scoring ---
     scoreGroup: function(idx, delta) {
-        if (AppState.userMode === 'guest') return;
-        AppState.groups[idx].score += delta;
-        AudioSys.play('click');
-        this.renderDashboard(); this.save();
+        if(AppState.userMode === 'guest') return;
+        AppState.groups[idx].score += delta; AudioSys.play('click'); this.renderDashboard(); this.save();
     },
     scoreMember: function(gIdx, mIdx, delta) {
-        if (AppState.userMode === 'guest') return;
+        if(AppState.userMode === 'guest') return;
         AppState.groups[gIdx].members[mIdx].score += delta;
-        if (AppState.settings.linked) AppState.groups[gIdx].score += delta;
-        AudioSys.play('click');
-        this.renderDashboard(); this.save();
+        if(AppState.settings.linked) AppState.groups[gIdx].score += delta;
+        AudioSys.play('click'); this.renderDashboard(); this.save();
     },
 
     renderDashboard: function() {
-        const c = document.getElementById('groups-container');
-        c.innerHTML = '';
+        const c = document.getElementById('groups-container'); c.innerHTML = '';
+        const rankList = document.getElementById('buzzer-rank-list');
+        
+        // Update Buzzer Panel Info
+        document.getElementById('admin-buzzer-state').innerText = AppState.buzzer.state.toUpperCase();
+        if(AppState.buzzer.results.length > 0) {
+            let html = '';
+            AppState.buzzer.results.forEach((r,i) => html += `<span style="margin:0 10px;">#${i+1} ${r.groupName}</span>`);
+            rankList.innerHTML = html;
+        } else {
+            rankList.innerHTML = '<span style="color:#999; font-weight:normal;">尚無搶答結果</span>';
+        }
+
+        // Cards
         AppState.groups.forEach((g, gIdx) => {
             let mHtml = '';
             g.members.forEach((m, mIdx) => {
-                mHtml += `
-                <div class="member-row" id="m-${gIdx}-${mIdx}">
-                    <span class="member-name">${m.name}</span>
-                    <div class="score-control">
-                        <button class="btn-circle btn-minus" onclick="app.scoreMember(${gIdx},${mIdx},-1)">-</button>
-                        <span class="member-score">${m.score}</span>
-                        <button class="btn-circle btn-plus" onclick="app.scoreMember(${gIdx},${mIdx},1)">+</button>
-                    </div>
-                </div>`;
+                mHtml += `<div class="member-row"><span class="member-name">${m.name}</span><div style="display:flex; gap:5px;"><button class="btn-circle" style="width:24px; height:24px; font-size:1rem;" onclick="app.scoreMember(${gIdx},${mIdx},-1)">-</button><span class="member-score">${m.score}</span><button class="btn-circle" style="width:24px; height:24px; font-size:1rem; color:var(--primary);" onclick="app.scoreMember(${gIdx},${mIdx},1)">+</button></div></div>`;
             });
 
+            const rank = AppState.buzzer.results.findIndex(r => r.groupName === g.name);
+            let borderStyle = '';
+            if(rank === 0) borderStyle = 'border: 2px solid #FFD60A; box-shadow: 0 0 15px rgba(255, 214, 10, 0.4);';
+
             const div = document.createElement('div');
-            div.className = 'group-card';
-            div.id = `g-${gIdx}`;
+            div.className = 'glass group-card';
+            if(borderStyle) div.style.cssText += borderStyle;
             div.innerHTML = `
                 <div class="group-header">
                     <span class="group-name">${g.name}</span>
-                    <div class="score-control">
-                        <button class="btn-circle btn-minus" onclick="app.scoreGroup(${gIdx},-1)">-</button>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button class="btn-circle" onclick="app.scoreGroup(${gIdx}, -1)">-</button>
                         <span class="score-display">${g.score}</span>
-                        <button class="btn-circle btn-plus" onclick="app.scoreGroup(${gIdx},1)">+</button>
+                        <button class="btn-circle" style="color:var(--primary);" onclick="app.scoreGroup(${gIdx}, 1)">+</button>
                     </div>
                 </div>
                 <div class="member-list">${mHtml}</div>
             `;
             c.appendChild(div);
         });
+
+        if(AppState.userMode === 'guest') app.buzzer.updateStudentScreen();
     },
 
-    // --- Sync ---
-    sync: {
-        timer: null,
-        startPolling: function() {
-            if (this.timer) clearInterval(this.timer);
-            // Poll every 5 seconds if URL exists
-            this.timer = setInterval(() => {
-                if(AppState.settings.gasUrl) app.sync.pull();
-            }, 5000);
-            // Initial pull
-            if(AppState.settings.gasUrl) app.sync.pull();
+    buzzer: {
+        set: function(s) {
+            AppState.buzzer.state = s;
+            if(s==='idle') AppState.buzzer.results=[];
+            if(s==='ready') AudioSys.play('ready'); if(s==='go') AudioSys.play('go');
+            app.save(); app.renderDashboard();
         },
-        manualSync: function() { app.save(); app.sync.pull(); },
-        push: function() {
-            const url = AppState.settings.gasUrl;
-            if (!url) return;
-            document.getElementById('sync-spinner').style.display = 'block';
-            fetch(url, {
-                method: 'POST', mode: 'no-cors',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({action: 'save', data: AppState})
-            }).then(() => {
-                setTimeout(() => document.getElementById('sync-spinner').style.display = 'none', 1000);
-            });
-        },
-        pull: function() {
-            const url = AppState.settings.gasUrl;
-            if (!url) return;
-            document.getElementById('sync-spinner').style.display = 'block';
-            fetch(url + '?action=read', { method: 'GET', redirect: 'follow' })
-            .then(r => r.json())
-            .then(data => {
-                if(data && data.groups) {
-                    // Only update data, preserve local password/settings if admin
-                    AppState.groups = data.groups;
-                    if (data.settings && data.settings.linked !== undefined) AppState.settings.linked = data.settings.linked;
-                    
-                    app.renderDashboard();
-                    if(AppState.userMode === 'admin') app.admin.renderManualGroups();
-                    app.updateUI();
+        enterStudentMode: function() { document.getElementById('student-buzzer-screen').style.display='flex'; this.updateStudentScreen(); },
+        exitStudentMode: function() { document.getElementById('student-buzzer-screen').style.display='none'; },
+        updateStudentScreen: function() {
+            const txt = document.getElementById('buzzer-status-text');
+            const btn = document.getElementById('buzzer-btn');
+            const s = AppState.buzzer.state;
+            
+            if(s === 'idle') { txt.innerText = "老師準備中..."; btn.style.display='none'; }
+            else if(s === 'ready') { txt.innerText = "✋ 預備..."; btn.style.display='none'; }
+            else if(s === 'go') {
+                const myRes = AppState.buzzer.results.find(r => r.groupName === AppState.myGroup);
+                if(myRes) {
+                    txt.innerText = `排名: 第 ${AppState.buzzer.results.indexOf(myRes)+1} 名`;
+                    btn.style.display='none';
+                } else {
+                    txt.innerText = "🔥 搶答！";
+                    btn.style.display='block';
                 }
-                document.getElementById('sync-spinner').style.display = 'none';
-            })
-            .catch(e => document.getElementById('sync-spinner').style.display = 'none');
+            }
+        },
+        studentBuzz: function() {
+            if(!AppState.settings.gasUrl) return alert('未連線');
+            document.getElementById('buzzer-btn').style.display='none';
+            document.getElementById('buzzer-status-text').innerText = "傳送中...";
+            fetch(AppState.settings.gasUrl, {
+                method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ action: 'buzz', groupName: AppState.myGroup, timestamp: Date.now() })
+            }).then(() => setTimeout(() => app.sync.pull(), 500));
         }
     },
 
-    toast: function(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.style.opacity = 1;
-        setTimeout(() => t.style.opacity = 0, 2000);
-    },
-
-    // --- Admin ---
     admin: {
         renderManualGroups: function() {
-            const c = document.getElementById('manual-group-container');
-            c.innerHTML = '';
-            AppState.groups.forEach((g, idx) => {
-                const names = g.members.map(m => m.name).join('\n');
+            const c = document.getElementById('manual-group-container'); c.innerHTML='';
+            AppState.groups.forEach((g,idx) => {
+                const names = g.members.map(m=>m.name).join('\n');
                 const div = document.createElement('div');
-                div.className = 'manual-group-item';
+                div.className='manual-group-item';
                 div.innerHTML = `
-                    <div class="manual-group-header">
-                        <input type="text" value="${g.name}" id="gn-${idx}" style="width:100px; padding:2px; border:1px solid #ddd; border-radius:4px;">
-                        <span>(分: ${g.score})</span>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <input type="text" value="${g.name}" id="gn-${idx}" style="border:none; background:transparent; font-weight:bold; border-bottom:1px solid #999; width:120px; font-size:1.1rem;">
+                        <button class="btn danger" style="padding:6px 10px; font-size:0.8rem;" onclick="app.admin.deleteGroup(${idx})">刪除本組</button>
                     </div>
-                    <textarea class="form-control" id="gt-${idx}" style="height:150px; margin-bottom:0;">${names}</textarea>
+                    <textarea class="form-control" id="gt-${idx}" style="height:80px; background:rgba(255,255,255,0.8);">${names}</textarea>
                 `;
                 c.appendChild(div);
             });
-            document.getElementById('group-count-bulk').value = AppState.groups.length;
         },
+        addGroup: function() { AppState.groups.push({name:`新組別`, score:0, members:[]}); this.renderManualGroups(); },
+        deleteGroup: function(idx) { if(confirm("確定刪除此組？")) { AppState.groups.splice(idx,1); this.renderManualGroups(); } },
         saveManualGroups: function() {
-            AppState.groups.forEach((g, idx) => {
-                const newName = document.getElementById(`gn-${idx}`).value;
-                const text = document.getElementById(`gt-${idx}`).value;
-                const newMembers = text.split(/\n/).map(n=>n.trim()).filter(n=>n).map(n => {
-                    const exist = g.members.find(old => old.name === n);
-                    return { name: n, score: exist ? exist.score : 0 };
+            try {
+                AppState.groups.forEach((g,idx) => {
+                    const nameInput = document.getElementById(`gn-${idx}`);
+                    const memberInput = document.getElementById(`gt-${idx}`);
+                    if(nameInput && memberInput) {
+                        g.name = nameInput.value;
+                        const text = memberInput.value;
+                        g.members = text.split('\n').map(n=>n.trim()).filter(n=>n).map(n=>{
+                            const exist = g.members.find(old=>old.name===n);
+                            return {name:n, score: exist?exist.score:0};
+                        });
+                    }
                 });
-                g.name = newName; g.members = newMembers;
-            });
-            app.renderDashboard(); app.save(); app.toast("儲存成功");
+                app.renderDashboard(); 
+                app.save(); 
+                app.toast("✅ 設定已儲存");
+            } catch(e) { console.error(e); alert("儲存時發生錯誤"); }
         },
         autoRandomGroup: function() {
-            if(!confirm("確定重新分組？")) return;
-            const names = document.getElementById('bulk-names').value.split(/\r?\n/).map(n=>n.trim()).filter(n=>n);
-            const count = parseInt(document.getElementById('group-count-bulk').value) || 6;
-            if(!names.length) return;
-            
-            for (let i = names.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [names[i], names[j]] = [names[j], names[i]]; }
-            const newGroups = [];
-            for(let i=0; i<count; i++) newGroups.push({name:`第${i+1}組`, score:0, members:[]});
-            names.forEach((n,i) => newGroups[i%count].members.push({name:n, score:0}));
-            
-            AppState.groups = newGroups;
-            this.renderManualGroups(); app.renderDashboard(); app.save(); app.toast("已隨機分組");
-        },
-        resetScores: function() {
-            if(!confirm("歸零所有分數？")) return;
-            AppState.groups.forEach(g => { g.score=0; g.members.forEach(m=>m.score=0); });
-            app.save(); app.renderDashboard(); app.admin.renderManualGroups();
+            if(!confirm("重新隨機分組？現有分組將被覆蓋！")) return;
+            const names = document.getElementById('bulk-names').value.split('\n').map(n=>n.trim()).filter(n=>n);
+            const count = parseInt(document.getElementById('group-count').value)||6;
+            if(!names.length) return alert('請輸入名單');
+            for(let i=names.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [names[i],names[j]]=[names[j],names[i]]; }
+            const newG = []; for(let i=0; i<count; i++) newG.push({name:`第${i+1}組`, score:0, members:[]});
+            names.forEach((n,i) => newG[i%count].members.push({name:n, score:0}));
+            AppState.groups = newG; this.renderManualGroups(); app.renderDashboard(); app.save(); app.toast("已隨機分組");
         },
         exportCSV: function() {
              let csv = "\uFEFF組別,姓名,個人分,組總分\n";
              AppState.groups.forEach(g => { g.members.forEach(m => csv += `${g.name},${m.name},${m.score},${g.score}\n`); });
-             const a = document.createElement('a');
-             a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
-             a.download = '成績單.csv'; a.click();
+             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = '成績單.csv'; a.click();
         }
     },
 
-    // --- Lottery ---
-    lottery: {
+    sync: {
         timer: null,
+        startPolling: function(ms=5000) { if(this.timer) clearInterval(this.timer); this.timer = setInterval(()=>{if(AppState.settings.gasUrl)app.sync.pull()}, ms); if(AppState.settings.gasUrl)app.sync.pull(); },
+        manualSync: function() { app.save(); app.sync.pull(); app.toast("同步中..."); },
+        push: function() {
+            if(!AppState.settings.gasUrl) return;
+            fetch(AppState.settings.gasUrl, { method: 'POST', mode: 'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'save', data:AppState}) });
+        },
+        pull: function() {
+            if(!AppState.settings.gasUrl) return;
+            const dot = document.getElementById('conn-dot');
+            fetch(AppState.settings.gasUrl + '?action=read', {method:'GET', redirect:'follow'})
+            .then(r=>r.json()).then(d => {
+                if(d && d.groups) {
+                    if(d.buzzer) AppState.buzzer = d.buzzer;
+                    AppState.groups = d.groups;
+                    if(d.settings && d.settings.linked!==undefined) AppState.settings.linked = d.settings.linked;
+                    app.renderDashboard(); 
+                    if(AppState.userMode==='admin' && document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'INPUT') {
+                        app.admin.renderManualGroups();
+                    }
+                    app.updateUI();
+                    dot.classList.add('ok');
+                }
+            }).catch(e => dot.classList.remove('ok'));
+        }
+    },
+
+    lottery: {
         start: function(mode) {
-            document.querySelector('.fab-menu').classList.remove('show');
-            app.switchView('dashboard');
-            if (mode === 'person-in-group') { this.showGroupSelect(); return; }
-            let targets = []; 
-            if (mode === 'group') targets = AppState.groups.map((g, i) => ({ id: `g-${i}`, name: g.name }));
-            else if (mode === 'person') AppState.groups.forEach((g, gi) => g.members.forEach((m, mi) => targets.push({ id: `m-${gi}-${mi}`, name: m.name })));
-            this.runAnimation(targets);
-        },
-        showGroupSelect: function() {
-            const list = document.getElementById('group-select-list');
-            list.innerHTML = '';
-            AppState.groups.forEach((g, i) => {
-                const btn = document.createElement('button');
-                btn.className = 'toggle-btn'; btn.style.width = '100%'; btn.style.padding = '10px'; btn.innerText = g.name;
-                btn.onclick = () => {
-                    document.getElementById('modal-group-select').classList.remove('open');
-                    this.runAnimation(g.members.map((m, mi) => ({ id: `m-${i}-${mi}`, name: m.name })));
-                };
-                list.appendChild(btn);
-            });
-            document.getElementById('modal-group-select').classList.add('open');
-        },
-        runAnimation: function(targets) {
-            if (!targets.length) { alert('名單為空'); return; }
-            document.querySelectorAll('.lottery-active').forEach(e => e.classList.remove('lottery-active'));
-            let count = 0, max = 20 + Math.floor(Math.random()*10), speed = 80, idx = Math.floor(Math.random()*targets.length);
+            document.querySelector('.fab-menu').style.display='none'; app.switchView('dashboard');
+            let t = []; if(mode==='group') t=AppState.groups.map(g=>g.name); else AppState.groups.forEach(g=>g.members.forEach(m=>t.push(m.name)));
+            if(!t.length) return alert('無名單');
+            let c=0, max=20, idx=0;
             const step = () => {
-                const prev = document.getElementById(targets[idx].id); if(prev) prev.classList.remove('lottery-active');
-                idx = (idx + 1) % targets.length;
-                const next = document.getElementById(targets[idx].id);
-                if(next) { next.classList.add('lottery-active'); next.scrollIntoView({behavior:"auto", block:"center"}); AudioSys.play('tick'); }
-                count++;
-                if (count < max) { if (count > max-8) speed+=60; setTimeout(step, speed); }
-                else { AudioSys.play('win'); document.getElementById('winner-name').innerText = targets[idx].name; document.getElementById('modal-winner').classList.add('open'); }
-            };
+                idx = (idx+1)%t.length; document.getElementById('winner-name').innerText = t[idx]; AudioSys.play('click');
+                document.getElementById('modal-winner').classList.add('open');
+                if(++c<max) setTimeout(step, 50+(c*10)); else AudioSys.play('win');
+            }
             step();
         }
+    },
+    
+    toast: function(msg) {
+        const t = document.getElementById('toast');
+        t.innerHTML = msg;
+        t.style.opacity = 1; t.style.top = '30px';
+        setTimeout(() => { t.style.opacity=0; t.style.top='20px'; }, 2000);
     }
 };
 
+window.app = app;
 app.init();
 </script>
 </body>
