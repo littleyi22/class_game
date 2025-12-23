@@ -3,218 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>奕鈞老師的國文課 - Liquid Glass OS</title>
+    <title>奕鈞老師的國文課 - iClass Pro</title>
     <style>
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.45);
-            --glass-border: rgba(255, 255, 255, 0.6);
-            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-            --primary: #007AFF; /* iOS Blue */
-            --success: #34C759; /* iOS Green */
-            --danger: #FF3B30; /* iOS Red */
-            --text-main: #1d1d1f;
-            --text-sub: #3c3c4399;
-            --radius: 20px;
+            /* iOS Colors */
+            --ios-blue: #007AFF;
+            --ios-green: #34C759;
+            --ios-red: #FF3B30;
+            --ios-yellow: #FFCC00;
+            --ios-gray: #8E8E93;
+            --ios-light: rgba(255, 255, 255, 0.65);
+            --ios-glass: rgba(255, 255, 255, 0.75);
+            --text-primary: #000000;
+            --text-secondary: #3C3C43;
+            
+            /* Shadows */
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.6);
         }
 
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        /* 1. 液態流動背景 */
-        body {
-            margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
-            background: linear-gradient(125deg, #a1c4fd, #c2e9fb, #fbc2eb, #a6c1ee, #fdcbf1);
+        body { 
+            margin: 0; padding: 0; 
+            color: var(--text-primary); 
+            height: 100vh; 
+            display: flex; flex-direction: column; overflow: hidden;
+            /* Liquid Gradient Background */
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             background-size: 400% 400%;
-            animation: fluidBackground 15s ease infinite;
-            color: var(--text-main);
+            animation: gradientBG 15s ease infinite;
         }
-        @keyframes fluidBackground {
+
+        @keyframes gradientBG {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
 
-        /* 2. 玻璃擬態通用類別 */
+        /* --- Glassmorphism Components --- */
         .glass-panel {
-            background: var(--glass-bg);
+            background: var(--ios-glass);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius);
-            box-shadow: var(--glass-shadow);
+            border: var(--glass-border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: var(--glass-border);
+            border-radius: 20px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
         /* HEADER */
         header {
-            padding: 1rem 1.2rem; display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-            border-bottom: 1px solid rgba(255,255,255,0.4);
+            padding: 0.8rem 1.2rem; display: flex; justify-content: space-between; align-items: center;
             z-index: 50; flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
         }
-        .brand { font-size: 1.1rem; font-weight: 700; color: #000; display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px; }
-        .controls { display: flex; gap: 8px; }
+        .brand { font-size: 1.1rem; font-weight: 700; color: #1c1c1e; display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px; }
+        .controls { display: flex; gap: 10px; }
         
-        /* iOS Style Toggles/Buttons */
         .toggle-btn {
-            background: rgba(255, 255, 255, 0.5); border: 1px solid rgba(255,255,255,0.6); 
-            padding: 0.5rem 1rem; border-radius: 50px;
-            font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-            color: var(--text-main);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            background: rgba(0,0,0,0.05); border: none; padding: 6px 14px; border-radius: 100px;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px;
+            color: var(--ios-blue);
         }
-        .toggle-btn:active { transform: scale(0.95); }
-        .toggle-btn.active { background: var(--primary); color: white; border-color: transparent; box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3); }
-        .toggle-btn.active-green { background: var(--success); color: white; border-color: transparent; }
-        .toggle-btn.danger { background: rgba(255, 59, 48, 0.1); color: var(--danger); border-color: var(--danger); }
+        .toggle-btn.active { background: var(--ios-blue); color: white; box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3); }
+        .toggle-btn.active-green { background: var(--ios-green); color: white; box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3); }
+        .toggle-btn.danger { background: rgba(255, 59, 48, 0.1); color: var(--ios-red); }
 
-        /* NAV (Floating Pill) */
+        /* NAV */
         nav { 
-            background: transparent; padding: 0.5rem; display: flex; justify-content: center; gap: 0.8rem; 
-            flex-shrink: 0;
+            display: flex; justify-content: center; gap: 6px; padding: 10px; flex-shrink: 0; 
+            background: rgba(255,255,255,0.3);
         }
         .nav-item {
-            padding: 0.6rem 1.2rem; border: none; background: rgba(255,255,255,0.25); 
-            font-weight: 600; color: var(--text-sub); cursor: pointer; border-radius: 50px;
-            transition: 0.3s;
-            backdrop-filter: blur(10px);
+            padding: 8px 16px; border: none; background: transparent; 
+            font-weight: 600; color: #86868b; cursor: pointer; border-radius: 12px;
+            font-size: 0.95rem; transition: 0.2s;
         }
-        .nav-item.active { 
-            background: white; color: black; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px);
-        }
+        .nav-item.active { background: white; color: #1c1c1e; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 
-        /* MAIN */
-        main { flex: 1; overflow-y: auto; padding: 1rem; position: relative; scroll-behavior: smooth; }
-        .view-section { display: none; padding-bottom: 100px; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        .view-section.active { display: block; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* DASHBOARD GRID */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; }
-        .group-card {
-            background: rgba(255, 255, 255, 0.55);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 24px;
-            overflow: hidden; display: flex; flex-direction: column;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1);
-            position: relative;
-        }
-        /* Rank badges */
-        .group-rank-badge {
-            position: absolute; top: 12px; right: 12px; 
-            background: linear-gradient(135deg, #FFD700, #FDB931); color: #8a6d3b;
-            font-weight: 800; padding: 4px 10px; border-radius: 12px; font-size: 1rem; display: none; z-index: 10;
-            box-shadow: 0 4px 10px rgba(253, 185, 49, 0.4);
-        }
-        .group-card.rank-1 { transform: scale(1.02); border: 2px solid #FDB931; z-index: 5; }
-        .group-card.rank-1 .group-rank-badge { display: block; }
-        
-        .group-header { 
-            padding: 1rem; background: rgba(255,255,255,0.3); border-bottom: 1px solid rgba(255,255,255,0.2); 
-            display: flex; justify-content: space-between; align-items: center; 
-        }
-        .group-name { font-weight: 700; font-size: 1.2rem; letter-spacing: -0.5px; }
-        .score-display { 
-            font-size: 1.5rem; font-weight: 800; 
-            background: linear-gradient(135deg, #007AFF, #00C6FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            min-width: 45px; text-align: center; 
-        }
-        
-        .btn-circle {
-            width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s;
-        }
-        .btn-circle:active { transform: scale(0.9); }
-        .btn-minus { background: white; color: var(--danger); }
-        .btn-plus { background: var(--primary); color: white; }
-
-        .member-list { padding: 0.8rem; }
-        .member-row { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 0.6rem; border-radius: 12px; margin-bottom: 4px; background: rgba(255,255,255,0.2);
-            transition: 0.2s;
-        }
-        .member-row:hover { background: rgba(255,255,255,0.5); }
-        .member-name { font-weight: 600; font-size: 1rem; color: #444; }
-        
-        /* BUZZER CONTROLS */
-        .admin-box { 
-            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(25px);
-            padding: 2rem; border-radius: 24px; box-shadow: var(--glass-shadow); margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.6);
-        }
-        #buzzer-controls { display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
-        .btn-big { 
-            padding: 16px 32px; font-size: 1.1rem; font-weight: 700; border-radius: 20px; border:none; cursor: pointer; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15); transition: 0.2s; letter-spacing: 0.5px; color: white;
-            position: relative; overflow: hidden;
-        }
-        .btn-big::after { content: ''; position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(rgba(255,255,255,0.2), transparent); }
-        .btn-big:active { transform: scale(0.95); }
-
-        /* STUDENT SCREEN */
-        #student-buzzer-screen { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000;
-            background: radial-gradient(circle at center, #ffffff, #e6e9f0); padding: 20px; text-align: center;
-        }
-        .buzzer-state-ready { background: radial-gradient(circle at center, #fffbe6, #fff1b8) !important; }
-        .buzzer-state-go { background: radial-gradient(circle at center, #e6fffb, #b5f5ec) !important; }
-        
-        .buzzer-btn-main {
-            width: 220px; height: 220px; border-radius: 50%; 
-            border: 4px solid rgba(255,255,255,0.8);
-            background: radial-gradient(circle at 30% 30%, #ff6b6b, #ee0979);
-            color: white; font-size: 2.5rem; font-weight: 900;
-            box-shadow: 0 20px 50px rgba(238, 9, 121, 0.4), inset 0 10px 20px rgba(255,255,255,0.4); 
-            cursor: pointer; display: none;
-            animation: pulse 1.5s infinite; text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(238, 9, 121, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(238, 9, 121, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(238, 9, 121, 0); } }
-
-        /* INPUTS & UTILS */
-        .form-control { 
-            width: 100%; padding: 12px; border: 1px solid rgba(0,0,0,0.1); 
-            background: rgba(255,255,255,0.5); border-radius: 12px; font-size: 1rem; margin-bottom: 10px; 
-            transition: 0.2s;
-        }
-        .form-control:focus { outline: none; background: white; box-shadow: 0 0 0 3px rgba(0,122,255,0.2); }
-        
-        /* FAB */
-        .fab-container { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column-reverse; gap: 15px; z-index: 100; }
-        .fab-main { 
-            width: 64px; height: 64px; border-radius: 32px; 
-            background: linear-gradient(135deg, #FF9966, #FF5E62); color: white; border: none; 
-            box-shadow: 0 10px 25px rgba(255, 94, 98, 0.4); font-size: 28px; cursor: pointer; 
-            display: flex; align-items: center; justify-content: center; 
-            backdrop-filter: blur(5px);
-        }
-        .fab-menu { display: none; flex-direction: column; gap: 10px; align-items: flex-end; }
-        .fab-container:hover .fab-menu, .fab-menu.show { display: flex; }
-        .fab-item { 
-            background: rgba(255,255,255,0.9); color: var(--text-main); padding: 12px 20px; 
-            border-radius: 20px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
-            font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; 
-        }
-
-        /* MODALS */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 3000; animation: fadeIn 0.3s; }
-        .modal { background: rgba(255,255,255,0.85); backdrop-filter: blur(30px); padding: 2.5rem; border-radius: 30px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.6); }
-
-        /* LOGIN */
-        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-card { background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); padding: 3rem; border-radius: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
-
-        /* GUEST MODE */
+        /* GUEST MODES */
         body.mode-guest .admin-only { display: none !important; }
         body.mode-guest .score-control button { display: none !important; }
         body.mode-guest .fab-container { display: none !important; }
 
-        /* SPINNER */
-        .spinner { border: 3px solid rgba(0,0,0,0.1); border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; display: none;}
+        /* MAIN */
+        main { flex: 1; overflow-y: auto; padding: 1rem; position: relative; scroll-behavior: smooth; }
+        .view-section { display: none; padding-bottom: 100px; }
+        .view-section.active { display: block; animation: fadeIn 0.4s ease; }
+
+        /* DASHBOARD GRID */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; }
+        
+        .group-card {
+            overflow: hidden; display: flex; flex-direction: column;
+            position: relative;
+        }
+        /* Rank Badges */
+        .group-rank-badge {
+            position: absolute; top: 10px; right: 10px; 
+            background: linear-gradient(135deg, #FFD700, #FDB931); color: #8a6d3b;
+            font-weight: 800; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem; 
+            display: none; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .group-card.rank-1 { box-shadow: 0 0 0 2px #FFD700, var(--shadow-md); transform: scale(1.02); z-index: 5; }
+        .group-card.rank-1 .group-rank-badge { display: block; }
+        .group-card.rank-2 .group-rank-badge { display: block; background: linear-gradient(135deg, #E0E0E0, #BDBDBD); color: #555; content: "#2"; }
+        .group-card.rank-3 .group-rank-badge { display: block; background: linear-gradient(135deg, #cd7f32, #a0522d); color: #fff; content: "#3"; }
+
+        .group-header { 
+            padding: 1rem; background: rgba(255,255,255,0.4); 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .group-name { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.5px; }
+        
+        .score-control { display: flex; align-items: center; gap: 8px; }
+        .score-display { font-size: 1.6rem; font-weight: 800; color: var(--ios-blue); min-width: 45px; text-align: center; font-variant-numeric: tabular-nums; }
+        
+        .btn-circle {
+            width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.1s;
+        }
+        .btn-minus { background: white; color: var(--ios-red); }
+        .btn-plus { background: white; color: var(--ios-blue); }
+        .btn-circle:active { transform: scale(0.9); background: #f2f2f7; }
+
+        .member-list { padding: 0.8rem; flex: 1; }
+        .member-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .member-row:last-child { border-bottom: none; }
+        .member-name { font-weight: 500; font-size: 1rem; color: #1c1c1e; }
+        .member-score { font-size: 1.1rem; font-weight: 600; color: #86868b; width: 30px; text-align: center;}
+
+        /* ADMIN BOX */
+        .admin-box { 
+            background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(20px); border-radius: 20px;
+            padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-md); border: var(--glass-border);
+        }
+        .admin-section-title { font-size: 1.2rem; margin: 0 0 1rem 0; font-weight: 700; color: #1c1c1e; }
+        .form-control { 
+            width: 100%; padding: 12px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; 
+            font-size: 1rem; margin-bottom: 10px; background: rgba(255,255,255,0.8);
+            transition: 0.2s;
+        }
+        .form-control:focus { outline: none; border-color: var(--ios-blue); background: white; }
+        textarea.form-control { resize: vertical; min-height: 120px; }
+        
+        /* MANUAL GROUP ITEM */
+        .manual-group-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .manual-group-item { background: rgba(255,255,255,0.5); padding: 12px; border-radius: 14px; border: 1px solid rgba(0,0,0,0.05); }
+        .manual-group-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
+
+        /* BUZZER TEACHER */
+        #buzzer-controls { display: flex; gap: 12px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
+        .btn-big { 
+            padding: 16px 24px; font-size: 1.1rem; font-weight: 700; border-radius: 16px; border:none; cursor: pointer; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: transform 0.1s; color: white;
+            backdrop-filter: blur(5px);
+        }
+        .btn-big:active { transform: scale(0.96); opacity: 0.9; }
+        
+        /* BUZZER STUDENT SCREEN */
+        #student-buzzer-screen { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000;
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(30px); padding: 20px; text-align: center;
+        }
+        /* States */
+        .buzzer-state-idle { background: #f2f2f7 !important; }
+        .buzzer-state-ready { background: #FFF9C4 !important; }
+        .buzzer-state-go { background: #E8F5E9 !important; }
+        
+        .buzzer-status-text { font-size: 2.5rem; font-weight: 800; margin-bottom: 20px; color: #1c1c1e; letter-spacing: -1px; }
+        .buzzer-btn-main {
+            width: 220px; height: 220px; border-radius: 50%; border: none;
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #ee5253);
+            color: white; font-size: 2.5rem; font-weight: 800;
+            box-shadow: 0 15px 35px rgba(238, 82, 83, 0.4), inset 0 5px 10px rgba(255,255,255,0.3);
+            cursor: pointer; display: none; margin-bottom: 20px;
+            transition: transform 0.1s;
+        }
+        .buzzer-btn-main:active { transform: scale(0.95); box-shadow: 0 5px 15px rgba(238, 82, 83, 0.4); }
+
+        /* FAB & MODALS */
+        .fab-container { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column-reverse; gap: 15px; z-index: 100; }
+        .fab-main { 
+            width: 64px; height: 64px; border-radius: 50%; background: var(--ios-blue); color: white; border: none; 
+            box-shadow: 0 8px 20px rgba(0, 122, 255, 0.4); font-size: 28px; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);
+        }
+        .fab-menu { display: none; flex-direction: column; gap: 12px; align-items: flex-end; }
+        .fab-container:hover .fab-menu, .fab-menu.show { display: flex; }
+        .fab-item { 
+            background: rgba(255,255,255,0.9); color: #1c1c1e; padding: 12px 20px; border-radius: 20px; border: none; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; 
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .modal-overlay.open { display: flex; animation: fadeIn 0.3s; }
+        .modal { background: rgba(255,255,255,0.9); padding: 2rem; border-radius: 24px; width: 90%; max-width: 380px; text-align: center; box-shadow: var(--shadow-md); border: 1px solid rgba(255,255,255,0.6); }
+        
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); backdrop-filter: blur(30px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .login-card { background: white; padding: 2.5rem; border-radius: 24px; box-shadow: var(--shadow-md); width: 90%; max-width: 360px; text-align: center; }
+        .login-btn { width: 100%; padding: 14px; border-radius: 14px; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; margin-top: 12px; transition: 0.2s;}
+        
+        #toast { 
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); 
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(10px); color: white; padding: 12px 24px; border-radius: 50px; 
+            font-size: 0.95rem; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 3500; font-weight: 500;
+        }
+        .spinner { border: 3px solid rgba(0,0,0,0.1); border-top: 3px solid var(--ios-blue); border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; display: none;}
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); color: white; padding: 12px 24px; border-radius: 50px; font-weight:600; font-size: 0.95rem; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 3500; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -222,18 +235,13 @@
 <!-- LOGIN -->
 <div id="login-overlay">
     <div class="login-card">
-        <h1 style="background: linear-gradient(45deg, #007AFF, #00C6FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top:0;">
-            Liquid Class
-        </h1>
-        <p style="color: #666; margin-bottom: 30px; font-weight: 500;">奕鈞老師的國文課</p>
-        
-        <div style="margin-bottom: 25px;">
-            <input type="password" id="password-input" class="form-control" placeholder="輸入老師密碼" style="text-align: center; font-size: 1.1rem;">
-            <button class="btn-big" style="width:100%; background: linear-gradient(135deg, #007AFF, #00C6FF); margin-top:10px;" onclick="app.auth.loginAdmin()">👨‍🏫 老師登入</button>
+        <h2 style="color: var(--ios-blue); margin-top: 0;">🔒 身份驗證</h2>
+        <div style="margin-bottom: 20px;">
+            <input type="password" id="password-input" class="form-control" placeholder="請輸入老師密碼" style="text-align: center; background:#f2f2f7;">
+            <button class="login-btn" style="background: var(--ios-blue); color: white;" onclick="app.auth.loginAdmin()">👨‍🏫 老師登入</button>
         </div>
-        
-        <div style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: 25px;">
-            <button class="toggle-btn" style="width:100%; padding:12px; font-size:1rem;" onclick="app.auth.loginGuest()">👀 學生訪客模式</button>
+        <div style="border-top: 1px solid #e5e5ea; padding-top: 20px;">
+            <button class="login-btn" style="background: #f2f2f7; color: var(--ios-blue);" onclick="app.auth.loginGuest()">👀 學生/訪客模式</button>
         </div>
     </div>
 </div>
@@ -241,105 +249,101 @@
 <!-- STUDENT GROUP SELECT -->
 <div id="modal-guest-select" class="modal-overlay">
     <div class="modal">
-        <h3>👋 選擇你的隊伍</h3>
-        <div id="guest-group-list" style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto; margin-top:20px;"></div>
+        <h3 style="margin-top:0;">👋 請選擇您的組別</h3>
+        <p style="color:#86868b; margin-bottom:20px;">選擇後將代表該組進行搶答</p>
+        <div id="guest-group-list" style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto;"></div>
     </div>
 </div>
 
 <!-- STUDENT BUZZER SCREEN -->
 <div id="student-buzzer-screen">
-    <div id="buzzer-status-text" style="font-size: 2.5rem; font-weight: 900; margin-bottom: 20px; color: #1d1d1f; text-shadow: 0 2px 10px rgba(255,255,255,0.5);">等候指令...</div>
-    <div id="buzzer-status-sub" style="font-size:1.2rem; color:#555; margin-bottom: 40px; font-weight:600;">代表：<span id="my-group-name" style="color:var(--primary);">---</span></div>
-    
+    <div id="buzzer-status-text" class="buzzer-status-text">等候老師指令...</div>
+    <div id="buzzer-status-sub" style="color:#86868b; font-weight:500; font-size:1.2rem; margin-bottom: 30px;">您代表：<span id="my-group-name" style="color:var(--ios-blue); font-weight:700;">---</span></div>
     <button id="buzzer-btn" class="buzzer-btn-main" onclick="app.buzzer.studentBuzz()">搶答!</button>
-    
-    <button class="toggle-btn" style="margin-top: 60px; background:white;" onclick="app.buzzer.exitStudentMode()">離開搶答模式</button>
+    <button class="toggle-btn" style="margin-top: 60px; background:rgba(0,0,0,0.05); padding:10px 20px;" onclick="app.buzzer.exitStudentMode()">離開搶答模式</button>
 </div>
 
 <header>
     <div class="brand">
-        <span>💧 Liquid Class</span>
-        <div id="sync-spinner" class="spinner" title="Syncing..."></div>
+        <span>📚 iClass Pro</span>
+        <div id="sync-spinner" class="spinner" title="同步中..."></div>
     </div>
     <div class="controls admin-only">
         <button id="toggle-link" class="toggle-btn active" onclick="app.toggleLink()">🔄 連動 <span id="link-status">ON</span></button>
         <button id="toggle-sound" class="toggle-btn active-green" onclick="app.toggleSound()">🔊 音效</button>
     </div>
     <div class="controls" id="guest-indicator" style="display:none;">
-        <span style="font-size:0.85rem; background:rgba(255,255,255,0.5); padding:6px 12px; border-radius:20px; font-weight:bold; backdrop-filter:blur(5px);">訪客模式</span>
+        <span style="font-size:0.8rem; background:rgba(0,0,0,0.05); padding:6px 10px; border-radius:12px; color:#86868b; font-weight:600;">訪客模式</span>
     </div>
 </header>
 
 <nav class="admin-only">
-    <button class="nav-item active" onclick="app.switchView('dashboard')">看板</button>
-    <button class="nav-item" onclick="app.switchView('buzzer')">搶答</button>
-    <button class="nav-item" onclick="app.switchView('admin')">設定</button>
+    <button class="nav-item active" onclick="app.switchView('dashboard')">分組看板</button>
+    <button class="nav-item" onclick="app.switchView('buzzer')">🚨 搶答</button>
+    <button class="nav-item" onclick="app.switchView('admin')">後台</button>
 </nav>
 
 <main>
     <!-- VIEW: DASHBOARD -->
     <section id="view-dashboard" class="view-section active">
         <!-- Buzzer Banner -->
-        <div id="dashboard-buzzer-banner" style="display:none; background: linear-gradient(135deg, #FF9966, #FF5E62); color:white; padding:1.5rem; border-radius:24px; margin-bottom:1.5rem; text-align:center; box-shadow: 0 10px 30px rgba(255, 94, 98, 0.3);">
-            <h2 style="margin:0; font-size:1.8rem;">🚨 搶答進行中！</h2>
-            <div id="buzzer-rank-list" style="margin-top:10px; font-size:1.3rem; font-weight:700;">等待結果...</div>
+        <div id="dashboard-buzzer-banner" class="glass-card" style="display:none; padding:15px; margin-bottom:20px; text-align:center; background: rgba(0,122,255,0.85); color:white;">
+            <h2 style="margin:0; font-size:1.4rem;">🚨 搶答進行中！</h2>
+            <div id="buzzer-rank-list" style="margin-top:10px; font-size:1.1rem; font-weight:600;">等待結果...</div>
         </div>
         <div id="groups-container" class="dashboard-grid"></div>
     </section>
 
     <!-- VIEW: BUZZER ADMIN -->
     <section id="view-buzzer" class="view-section admin-only">
-        <div class="admin-box" style="text-align: center;">
-            <h2 style="margin-bottom: 2rem; font-size:2rem; background: linear-gradient(45deg, #FF3B30, #FF9500); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">搶答控制器</h2>
+        <div class="admin-box" style="text-align: center; padding: 3rem 1rem;">
+            <h2 style="margin-bottom: 2rem; color:var(--ios-blue);">🚨 搶答控制器</h2>
             <div id="buzzer-controls">
-                <button class="btn-big" style="background: linear-gradient(135deg, #FFCC00, #FF9500);" onclick="app.buzzer.set('ready')">✋ 預備 (Ready)</button>
-                <button class="btn-big" style="background: linear-gradient(135deg, #34C759, #30B0C7);" onclick="app.buzzer.set('go')">🚀 開始 (Go!)</button>
-                <button class="btn-big" style="background: linear-gradient(135deg, #FF3B30, #FF2D55);" onclick="app.buzzer.set('idle')">🛑 停止 (Stop)</button>
+                <button class="btn-big" style="background:var(--ios-yellow); color:black;" onclick="app.buzzer.set('ready')">✋ 1. 預備 (Ready)</button>
+                <button class="btn-big" style="background:var(--ios-green); color:white;" onclick="app.buzzer.set('go')">🚀 2. 開始 (Go!)</button>
+                <button class="btn-big" style="background:var(--ios-red); color:white;" onclick="app.buzzer.set('idle')">🛑 3. 停止/重置</button>
             </div>
-            <p style="color:#666; font-weight:500;">狀態：<span id="admin-buzzer-state" style="font-weight:800; color:var(--primary);">IDLE</span></p>
-            <div style="margin-top:30px; padding:20px; background:rgba(255,255,255,0.4); border-radius:20px;">
-                <h3 style="margin-top:0;">🏆 即時排名</h3>
-                <div id="admin-buzzer-results" style="font-size:1.4rem; font-weight:bold; min-height: 50px;">(尚未開始)</div>
+            <p style="color:#86868b;">狀態：<span id="admin-buzzer-state" style="font-weight:800; color:var(--text-primary);">IDLE</span></p>
+            <div style="margin-top:30px; padding:20px; background:rgba(255,255,255,0.5); border-radius:16px;">
+                <h3 style="margin-top:0;">🏆 結果</h3>
+                <div id="admin-buzzer-results" style="font-size:1.2rem; min-height: 40px; font-weight:600;">尚未開始</div>
             </div>
         </div>
     </section>
 
     <!-- VIEW: ADMIN -->
     <section id="view-admin" class="view-section admin-only">
-        <!-- 快速分組 -->
         <div class="admin-box">
-            <h3>⚡ 快速隨機分組</h3>
-            <textarea id="bulk-names" class="form-control" placeholder="貼上名單 (一行一個名字)..."></textarea>
-            <div style="display: flex; gap: 15px; align-items: center;">
-                <label style="font-weight:600;">分組數：</label>
-                <input type="number" id="group-count-bulk" value="6" min="1" max="12" class="form-control" style="width: 80px; margin-bottom:0; text-align:center;">
-                <button class="toggle-btn active" onclick="app.admin.autoRandomGroup()" style="padding:12px 20px;">🎲 執行分組</button>
+            <h3 class="admin-section-title">⚡ 快速隨機分組</h3>
+            <textarea id="bulk-names" class="form-control" placeholder="貼上名單..."></textarea>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <label>分組數：</label>
+                <input type="number" id="group-count-bulk" value="6" min="1" max="12" style="width: 70px; padding: 10px; border-radius:10px; border:1px solid #ddd;">
+                <button class="toggle-btn active" onclick="app.admin.autoRandomGroup()">🎲 執行</button>
             </div>
         </div>
         
-        <!-- 手動微調 -->
         <div class="admin-box">
-            <h3>👥 手動分組微調</h3>
+            <h3 class="admin-section-title">👥 手動微調 (可增刪)</h3>
             <div id="manual-group-container" class="manual-group-grid"></div>
-            <button class="toggle-btn" style="width:100%; border:2px dashed #999; background:rgba(255,255,255,0.3); color:#666; margin-top:15px; padding:12px; font-weight:700;" onclick="app.admin.addGroup()">➕ 新增一組</button>
-            <button class="btn-big" onclick="app.admin.saveManualGroups()" style="margin-top: 20px; width: 100%; justify-content: center; background: linear-gradient(135deg, #007AFF, #5856D6);">💾 儲存設定</button>
+            <button class="toggle-btn" style="width:100%; border:2px dashed #ccc; background:transparent; color:#86868b; margin-top:15px; padding:12px; justify-content:center;" onclick="app.admin.addGroup()">➕ 新增一組</button>
+            <button class="toggle-btn active" onclick="app.admin.saveManualGroups()" style="margin-top: 20px; width: 100%; justify-content: center; padding: 14px; font-size:1rem;">💾 儲存設定</button>
         </div>
 
-        <!-- 系統設定 -->
         <div class="admin-box">
-            <h3>⚙️ 系統設定</h3>
+            <h3 class="admin-section-title">☁️ 雲端設定</h3>
             <div style="margin-bottom: 1rem;">
-                <label style="display:block; margin-bottom:8px; font-weight:bold; color:#555;">Google Apps Script URL (已寫死)</label>
-                <input type="text" id="gas-url" class="form-control" disabled style="background:rgba(0,0,0,0.05); color:#888;">
-                <div id="sync-status" style="font-size: 0.9rem; margin-top: 5px; color: var(--success); font-weight:600;">🟢 系統自動連線中</div>
+                <label style="display:block; margin-bottom:8px; font-weight:600; font-size:0.9rem; color:#86868b;">GAS 網址 (已鎖定)</label>
+                <input type="text" id="gas-url" class="form-control" disabled style="background:#f2f2f7; color:#86868b; cursor:not-allowed;">
+                <div id="sync-status" style="font-size: 0.9rem; margin-top: 5px; color: var(--ios-green); font-weight:600;">🟢 已自動載入</div>
             </div>
-            <button class="toggle-btn active-green" style="width:100%; margin-bottom: 1rem; padding:12px;" onclick="app.sync.manualSync()">☁️ 強制手動同步</button>
-            <button class="toggle-btn" onclick="app.admin.exportCSV()" style="width:100%; padding:12px;">📄 匯出 Excel 成績單</button>
+            <button class="toggle-btn active-green" style="width:100%; justify-content:center; margin-bottom: 1rem; padding:14px;" onclick="app.sync.manualSync()">☁️ 立即手動同步</button>
+            <button class="toggle-btn" style="width:100%; justify-content:center; background:#f2f2f7; color:#1c1c1e;" onclick="app.admin.exportCSV()">匯出 Excel</button>
         </div>
     </section>
 </main>
 
-<!-- FLOATING -->
+<!-- FAB -->
 <div class="fab-container admin-only">
     <button class="fab-main" onclick="document.querySelector('.fab-menu').classList.toggle('show')">🎲</button>
     <div class="fab-menu">
@@ -348,22 +352,24 @@
     </div>
 </div>
 
+<!-- MODAL WINNER -->
 <div id="modal-winner" class="modal-overlay" onclick="this.classList.remove('open')">
     <div class="modal" onclick="event.stopPropagation()">
-        <div style="font-size: 4rem;">🎉</div>
-        <h2 style="margin:10px 0; color:var(--primary);">幸運得主</h2>
-        <div id="winner-name" style="font-size:2.5rem; font-weight:900; color:#333; margin:20px 0;">---</div>
-        <button class="btn-big" style="background:var(--primary); width:100%;" onclick="document.getElementById('modal-winner').classList.remove('open')">確定</button>
+        <div style="font-size: 4rem; margin-bottom:10px;">🎉</div>
+        <h3 style="margin:0; color:#86868b;">幸運得主</h3>
+        <div id="winner-name" style="font-size:2.5rem; font-weight:800; color:var(--ios-blue); margin:15px 0;">---</div>
+        <button class="toggle-btn active" style="margin: 0 auto; padding:12px 30px;" onclick="document.getElementById('modal-winner').classList.remove('open')">確定</button>
     </div>
 </div>
 <div id="toast"></div>
 
 <script>
 /**
- * 奕鈞老師的國文課 - v6.0 Liquid Glass
+ * iClass Pro v5.1 - iPhone Liquid Glass Edition
+ * Hardcoded GAS URL
  */
 
-// HARDCODED URL
+// ⚠️ HARDCODED URL
 const FIXED_GAS_URL = "https://script.google.com/macros/s/AKfycbwtX0PXMlu2oksFO8IqUuRoywceloA0aDSpQ0QVxo-VW4a9i6uUlJxH4Oq1QqvhWSEc/exec";
 
 const AppState = {
@@ -389,7 +395,7 @@ const AudioSys = {
         switch(key) {
             case 'tick': this.playTone(400, 'square', 0.05); break;
             case 'win': this.playTone(523, 'sine', 0.1); setTimeout(()=>this.playTone(659, 'sine', 0.1), 100); setTimeout(()=>this.playTone(784, 'sine', 0.3), 200); break;
-            case 'click': this.playTone(800, 'sine', 0.08); break;
+            case 'click': this.playTone(800, 'sine', 0.05); break;
             case 'ready': this.playTone(440, 'triangle', 0.3); break;
             case 'go': this.playTone(880, 'square', 0.5); break;
         }
@@ -398,10 +404,9 @@ const AudioSys = {
 
 const app = {
     init: function() {
-        // Init default
         for(let i=0; i<6; i++) AppState.groups.push({name: `第${i+1}組`, score:0, members:[]});
         this.loadLocal();
-        // FORCE URL
+        // FORCE URL UPDATE
         AppState.settings.gasUrl = FIXED_GAS_URL;
         document.getElementById('gas-url').value = FIXED_GAS_URL;
         
@@ -416,11 +421,10 @@ const app = {
         },
         loginGuest: function() {
             AppState.userMode = 'guest'; this.applyMode();
-            // Show Group Select
             const list = document.getElementById('guest-group-list'); list.innerHTML = '';
             AppState.groups.forEach(g => {
                 const btn = document.createElement('button');
-                btn.className = 'toggle-btn'; btn.style.width='100%'; btn.style.padding='15px'; btn.innerText = g.name; btn.style.fontSize='1.1rem';
+                btn.className = 'toggle-btn'; btn.style.padding='14px'; btn.style.background='rgba(0,0,0,0.05)'; btn.style.width='100%'; btn.style.justifyContent='center'; btn.innerText = g.name;
                 btn.onclick = () => { AppState.myGroup = g.name; document.getElementById('my-group-name').innerText = g.name; document.getElementById('modal-guest-select').classList.remove('open'); app.buzzer.enterStudentMode(); };
                 list.appendChild(btn);
             });
@@ -437,13 +441,13 @@ const app = {
                 document.body.classList.remove('mode-guest');
                 document.getElementById('guest-indicator').style.display = 'none';
                 app.admin.renderManualGroups();
-                if (AppState.settings.gasUrl) app.sync.pull();
+                app.sync.pull();
             }
         }
     },
 
     loadLocal: function() {
-        const d = localStorage.getItem('classDataV6');
+        const d = localStorage.getItem('classDataV5_1');
         if (d) {
             const p = JSON.parse(d);
             AppState.groups = p.groups || [];
@@ -455,7 +459,8 @@ const app = {
 
     save: function() {
         if (AppState.userMode === 'guest') return;
-        localStorage.setItem('classDataV6', JSON.stringify(AppState));
+        AppState.settings.gasUrl = FIXED_GAS_URL; // Ensure it saves correct one
+        localStorage.setItem('classDataV5_1', JSON.stringify(AppState));
         this.sync.push(); 
     },
 
@@ -489,13 +494,12 @@ const app = {
     renderDashboard: function() {
         const c = document.getElementById('groups-container'); c.innerHTML = '';
         const banner = document.getElementById('dashboard-buzzer-banner');
-        const rankList = document.getElementById('buzzer-rank-list');
         
         if (AppState.buzzer.state !== 'idle') {
             banner.style.display = 'block';
             let html = '';
-            AppState.buzzer.results.forEach((r, i) => html += `<div>🥇 第 ${i+1} 名：${r.groupName}</div>`);
-            rankList.innerHTML = html || '等待中...';
+            AppState.buzzer.results.forEach((r, i) => html += `<div>#${i+1} ${r.groupName}</div>`);
+            document.getElementById('buzzer-rank-list').innerHTML = html || '等待搶答...';
         } else {
             banner.style.display = 'none';
         }
@@ -503,16 +507,18 @@ const app = {
         AppState.groups.forEach((g, gIdx) => {
             let mHtml = '';
             g.members.forEach((m, mIdx) => {
-                mHtml += `<div class="member-row"><span class="member-name">${m.name}</span><div class="score-control"><button class="btn-circle btn-minus" onclick="app.scoreMember(${gIdx},${mIdx},-1)">-</button><span class="member-score" style="font-weight:700; width:30px; text-align:center;">${m.score}</span><button class="btn-circle btn-plus" onclick="app.scoreMember(${gIdx},${mIdx},1)">+</button></div></div>`;
+                mHtml += `<div class="member-row"><span class="member-name">${m.name}</span><div class="score-control"><button class="btn-circle btn-minus" onclick="app.scoreMember(${gIdx},${mIdx},-1)">-</button><span class="member-score">${m.score}</span><button class="btn-circle btn-plus" onclick="app.scoreMember(${gIdx},${mIdx},1)">+</button></div></div>`;
             });
 
             let rankClass = '';
             const rankIdx = AppState.buzzer.results.findIndex(r => r.groupName === g.name);
             if (rankIdx === 0) rankClass = 'rank-1';
+            else if (rankIdx === 1) rankClass = 'rank-2';
+            else if (rankIdx === 2) rankClass = 'rank-3';
 
             const div = document.createElement('div');
-            div.className = `group-card ${rankClass}`;
-            div.innerHTML = `<div class="group-rank-badge">🏆 WINNER</div><div class="group-header"><span class="group-name">${g.name}</span><div class="score-control"><button class="btn-circle btn-minus" onclick="app.scoreGroup(${gIdx},-1)">-</button><span class="score-display">${g.score}</span><button class="btn-circle btn-plus" onclick="app.scoreGroup(${gIdx},1)">+</button></div></div><div class="member-list">${mHtml}</div>`;
+            div.className = `glass-card group-card ${rankClass}`;
+            div.innerHTML = `<div class="group-rank-badge">#${rankIdx+1}</div><div class="group-header"><span class="group-name">${g.name}</span><div class="score-control"><button class="btn-circle btn-minus" onclick="app.scoreGroup(${gIdx},-1)">-</button><span class="score-display">${g.score}</span><button class="btn-circle btn-plus" onclick="app.scoreGroup(${gIdx},1)">+</button></div></div><div class="member-list">${mHtml}</div>`;
             c.appendChild(div);
         });
         
@@ -524,69 +530,41 @@ const app = {
         if (AppState.userMode === 'guest') app.buzzer.updateStudentScreen();
     },
 
-    // --- BUZZER LOGIC ---
     buzzer: {
         set: function(state) {
             AppState.buzzer.state = state;
             if (state === 'idle') AppState.buzzer.results = [];
             if (state === 'ready') AudioSys.play('ready');
             if (state === 'go') AudioSys.play('go');
-            app.save(); 
-            app.renderDashboard();
+            app.save(); app.renderDashboard();
         },
-        enterStudentMode: function() {
-            document.getElementById('student-buzzer-screen').style.display = 'flex';
-            this.updateStudentScreen();
-        },
-        exitStudentMode: function() {
-            document.getElementById('student-buzzer-screen').style.display = 'none';
-        },
+        enterStudentMode: function() { document.getElementById('student-buzzer-screen').style.display = 'flex'; this.updateStudentScreen(); },
+        exitStudentMode: function() { document.getElementById('student-buzzer-screen').style.display = 'none'; },
         updateStudentScreen: function() {
             const screen = document.getElementById('student-buzzer-screen');
             const txt = document.getElementById('buzzer-status-text');
             const btn = document.getElementById('buzzer-btn');
-            
             screen.className = `buzzer-state-${AppState.buzzer.state}`;
             
-            if (AppState.buzzer.state === 'idle') {
-                txt.innerText = "👀 老師準備中...";
-                btn.style.display = 'none';
-            } else if (AppState.buzzer.state === 'ready') {
-                txt.innerText = "✋ 預備...";
-                btn.style.display = 'none';
-            } else if (AppState.buzzer.state === 'go') {
+            if (AppState.buzzer.state === 'idle') { txt.innerText = "老師準備中..."; btn.style.display = 'none'; }
+            else if (AppState.buzzer.state === 'ready') { txt.innerText = "✋ 預備..."; btn.style.display = 'none'; }
+            else if (AppState.buzzer.state === 'go') {
                 const myResult = AppState.buzzer.results.find(r => r.groupName === AppState.myGroup);
-                if (myResult) {
-                    const rank = AppState.buzzer.results.indexOf(myResult) + 1;
-                    txt.innerText = `🎉 搶到第 ${rank} 名!`;
-                    btn.style.display = 'none';
-                } else {
-                    txt.innerText = "🔥 快按！";
-                    btn.style.display = 'block';
-                }
+                if (myResult) { txt.innerText = `🏆 排名: ${AppState.buzzer.results.indexOf(myResult) + 1}`; btn.style.display = 'none'; }
+                else { txt.innerText = "🔥 快按！"; btn.style.display = 'block'; }
             }
         },
         studentBuzz: function() {
-            const btn = document.getElementById('buzzer-btn');
-            btn.style.display = 'none';
-            document.getElementById('buzzer-status-text').innerText = "⚡ 傳送中...";
+            document.getElementById('buzzer-btn').style.display = 'none';
+            document.getElementById('buzzer-status-text').innerText = "⚡ 送出...";
             AudioSys.play('go'); 
-            
-            fetch(AppState.settings.gasUrl, {
-                method: 'POST', mode: 'no-cors',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    action: 'buzz',
-                    groupName: AppState.myGroup,
-                    timestamp: Date.now()
-                })
-            }).then(() => {
-                setTimeout(() => app.sync.pull(), 500); 
-            });
+            fetch(FIXED_GAS_URL, {
+                method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ action: 'buzz', groupName: AppState.myGroup, timestamp: Date.now() })
+            }).then(() => setTimeout(() => app.sync.pull(), 500));
         }
     },
 
-    // --- ADMIN ---
     admin: {
         renderManualGroups: function() {
             const c = document.getElementById('manual-group-container'); c.innerHTML = '';
@@ -596,8 +574,8 @@ const app = {
                 div.className = 'manual-group-item';
                 div.innerHTML = `
                     <div class="manual-group-header">
-                        <input type="text" value="${g.name}" id="gn-${idx}" style="border:none; background:transparent; font-weight:bold; font-size:1rem;">
-                        <button class="toggle-btn danger" onclick="app.admin.deleteGroup(${idx})" style="padding:4px 10px; font-size:0.8rem;">🗑️ 刪除</button>
+                        <input type="text" value="${g.name}" id="gn-${idx}" style="width:120px; padding:6px; border:1px solid #ddd; border-radius:6px;">
+                        <button class="toggle-btn danger" onclick="app.admin.deleteGroup(${idx})" style="padding:4px 10px;">🗑️ 刪除</button>
                     </div>
                     <textarea class="form-control" id="gt-${idx}" style="height:100px; margin-bottom:0;">${names}</textarea>
                 `;
@@ -605,25 +583,17 @@ const app = {
             });
             document.getElementById('group-count-bulk').value = AppState.groups.length;
         },
-        addGroup: function() {
-            AppState.groups.push({name: `新組別 ${AppState.groups.length+1}`, score: 0, members: []});
-            this.renderManualGroups();
-        },
-        deleteGroup: function(idx) {
-            if(!confirm("確定刪除此組？")) return;
-            AppState.groups.splice(idx, 1);
-            this.renderManualGroups();
-        },
+        addGroup: function() { AppState.groups.push({name: `新組別 ${AppState.groups.length+1}`, score: 0, members: []}); this.renderManualGroups(); },
+        deleteGroup: function(idx) { if(confirm("刪除此組？")) { AppState.groups.splice(idx, 1); this.renderManualGroups(); }},
         saveManualGroups: function() {
             AppState.groups.forEach((g, idx) => {
                 if(!document.getElementById(`gn-${idx}`)) return;
-                const newName = document.getElementById(`gn-${idx}`).value;
+                g.name = document.getElementById(`gn-${idx}`).value;
                 const text = document.getElementById(`gt-${idx}`).value;
-                const newMembers = text.split(/\n/).map(n=>n.trim()).filter(n=>n).map(n => {
+                g.members = text.split(/\n/).map(n=>n.trim()).filter(n=>n).map(n => {
                     const exist = g.members.find(old => old.name === n);
                     return { name: n, score: exist ? exist.score : 0 };
                 });
-                g.name = newName; g.members = newMembers;
             });
             app.renderDashboard(); app.save(); app.toast("儲存成功");
         },
@@ -645,25 +615,22 @@ const app = {
         }
     },
 
-    // --- SYNC ---
     sync: {
         timer: null,
-        startPolling: function(interval = 5000) {
+        startPolling: function(interval = 4000) {
             if (this.timer) clearInterval(this.timer);
-            this.timer = setInterval(() => { if(AppState.settings.gasUrl) app.sync.pull(); }, interval);
-            if(AppState.settings.gasUrl) app.sync.pull();
+            this.timer = setInterval(() => app.sync.pull(), interval);
+            app.sync.pull();
         },
         manualSync: function() { document.getElementById('sync-status').innerText = '⏳ 同步中...'; app.save(); app.sync.pull(); },
         push: function() {
-            const url = AppState.settings.gasUrl; if (!url) return;
             document.getElementById('sync-spinner').style.display = 'block';
-            fetch(url, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({action: 'save', data: AppState}) })
+            fetch(FIXED_GAS_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({action: 'save', data: AppState}) })
             .then(() => setTimeout(() => document.getElementById('sync-spinner').style.display = 'none', 1000));
         },
         pull: function() {
-            const url = AppState.settings.gasUrl; if (!url) return;
             document.getElementById('sync-spinner').style.display = 'block';
-            fetch(url + '?action=read', { method: 'GET', redirect: 'follow' })
+            fetch(FIXED_GAS_URL + '?action=read', { method: 'GET', redirect: 'follow' })
             .then(r => r.json())
             .then(data => {
                 if(data && data.groups) {
@@ -674,14 +641,14 @@ const app = {
                     app.renderDashboard();
                     if(AppState.userMode === 'admin') app.admin.renderManualGroups();
                     app.updateUI();
-                    document.getElementById('sync-status').innerText = '🟢 已連線至雲端';
+                    document.getElementById('sync-status').innerText = '🟢 已自動載入';
                 }
                 document.getElementById('sync-spinner').style.display = 'none';
             })
             .catch(e => { document.getElementById('sync-spinner').style.display = 'none'; });
         }
     },
-    // Lottery
+    
     lottery: {
         start: function(mode) {
             document.querySelector('.fab-menu').classList.remove('show'); app.switchView('dashboard');
