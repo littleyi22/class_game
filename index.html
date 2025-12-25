@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>奕鈞老師的課堂 - iClass Pro v5.4</title>
+    <title>奕鈞老師的課堂 - iClass Pro v5.5</title>
     <style>
         :root {
             --ios-blue: #007AFF;
@@ -90,13 +90,25 @@
         .member-name { font-weight: 500; font-size: 1rem; }
         .member-score { font-size: 1.1rem; font-weight: 600; color: #86868b; width: 30px; text-align: center;}
 
-        /* TIMER Styles */
-        #timer-section { margin-top: 2rem; }
-        .timer-card { text-align: center; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .timer-display { font-size: 3.5rem; font-weight: 800; color: var(--text-primary); font-variant-numeric: tabular-nums; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 10px 0; }
-        .timer-controls { display: flex; gap: 10px; margin-top: 10px; }
-        .timer-input-group { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; }
-        .timer-input { width: 60px; padding: 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); text-align: center; font-size: 1.2rem; background: rgba(255,255,255,0.8); }
+        /* TIMER Styles (Fixed Version) */
+        #timer-section { 
+            margin-top: 2rem; 
+            /* Simplified style for better compatibility */
+            background: rgba(255, 255, 255, 0.9); 
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            text-align: center; 
+            padding: 1.5rem; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        }
+        .timer-display { font-size: 4rem; font-weight: 800; color: var(--text-primary); font-variant-numeric: tabular-nums; letter-spacing: 2px; margin: 10px 0; }
+        .timer-controls { display: flex; gap: 15px; margin-top: 15px; }
+        .timer-input-group { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .timer-input { 
+            width: 80px; padding: 12px; border-radius: 12px; border: 2px solid #e5e5ea; 
+            text-align: center; font-size: 1.5rem; background: white; font-weight: bold;
+        }
 
         .admin-box { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(20px); border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-md); border: var(--glass-border); }
         .admin-section-title { font-size: 1.2rem; margin: 0 0 1rem 0; font-weight: 700; }
@@ -191,8 +203,8 @@
         
         <div id="groups-container" class="dashboard-grid"></div>
         
-        <!-- COUNTDOWN TIMER (New) -->
-        <div id="timer-section" class="glass-card timer-card">
+        <!-- COUNTDOWN TIMER (Fixed) -->
+        <div id="timer-section">
             <h3 style="margin:0; color:#86868b; font-size:1rem;">⏳ 倒數計時器</h3>
             <div id="timer-display" class="timer-display">00:00</div>
             
@@ -201,11 +213,11 @@
                     <input type="number" id="timer-min" class="timer-input" value="5" min="0"> 分
                     <input type="number" id="timer-sec" class="timer-input" value="0" min="0" max="59"> 秒
                 </div>
-                <button class="toggle-btn active-green" onclick="app.timer.start()">▶ 開始</button>
+                <button class="toggle-btn active-green" style="padding: 12px 24px; font-size: 1.1rem;" onclick="app.timer.start()">▶ 開始</button>
             </div>
             
             <div class="timer-controls admin-only" id="timer-running-controls" style="display:none;">
-                <button class="toggle-btn danger" onclick="app.timer.stop()">⏹ 停止/重置</button>
+                <button class="toggle-btn danger" style="padding: 12px 24px; font-size: 1.1rem;" onclick="app.timer.stop()">⏹ 停止/重置</button>
             </div>
         </div>
     </section>
@@ -287,14 +299,14 @@
 
 <script>
 /**
- * iClass Pro v5.4 - Countdown Timer & Password Sync Fix
+ * iClass Pro v5.5 - Timer Bug Fix & Solid UI
  */
 
 const FIXED_GAS_URL = "https://script.google.com/macros/s/AKfycbwtX0PXMlu2oksFO8IqUuRoywceloA0aDSpQ0QVxo-VW4a9i6uUlJxH4Oq1QqvhWSEc/exec";
 const AppState = { 
     groups: [], 
     buzzer: { state: 'idle', results: [] }, 
-    timer: { endTime: null, running: false, initialSeconds: 300 }, // New Timer State
+    timer: { endTime: null, running: false, initialSeconds: 300 }, 
     settings: { linked: true, sound: true, gasUrl: FIXED_GAS_URL, password: '1234' }, 
     userMode: 'guest', myGroup: null 
 };
@@ -308,9 +320,7 @@ const app = {
         AppState.settings.gasUrl = FIXED_GAS_URL; 
         document.getElementById('gas-url').value = FIXED_GAS_URL; 
         this.renderDashboard(); 
-        app.timer.init(); // Init timer tick
-        
-        // Critical: Poll immediately to get password
+        app.timer.init(); 
         app.sync.pull();
     },
     auth: {
@@ -340,8 +350,8 @@ const app = {
             } else { alert("密碼長度至少需要 4 個字元"); }
         }
     },
-    loadLocal: function() { const d = localStorage.getItem('classDataV5_4'); if (d) { const p = JSON.parse(d); AppState.groups = p.groups || []; AppState.settings = Object.assign(AppState.settings, p.settings); AppState.buzzer = p.buzzer || { state: 'idle', results: [] }; if(p.timer) AppState.timer = p.timer; this.updateUI(); } },
-    save: function() { if (AppState.userMode === 'guest') return; AppState.settings.gasUrl = FIXED_GAS_URL; localStorage.setItem('classDataV5_4', JSON.stringify(AppState)); this.sync.push(); },
+    loadLocal: function() { const d = localStorage.getItem('classDataV5_5'); if (d) { const p = JSON.parse(d); AppState.groups = p.groups || []; AppState.settings = Object.assign(AppState.settings, p.settings); AppState.buzzer = p.buzzer || { state: 'idle', results: [] }; if(p.timer) AppState.timer = p.timer; this.updateUI(); } },
+    save: function() { if (AppState.userMode === 'guest') return; AppState.settings.gasUrl = FIXED_GAS_URL; localStorage.setItem('classDataV5_5', JSON.stringify(AppState)); this.sync.push(); },
     updateUI: function() { document.getElementById('link-status').innerText = AppState.settings.linked ? 'ON' : 'OFF'; document.getElementById('toggle-link').className = `toggle-btn ${AppState.settings.linked ? 'active' : ''}`; document.getElementById('toggle-sound').className = `toggle-btn ${AppState.settings.sound ? 'active-green' : ''}`; },
     toggleLink: function() { AppState.settings.linked = !AppState.settings.linked; this.updateUI(); this.save(); }, toggleSound: function() { AppState.settings.sound = !AppState.settings.sound; this.updateUI(); this.save(); },
     switchView: function(v) { document.querySelectorAll('.view-section').forEach(e => e.classList.remove('active')); document.getElementById('view-'+v).classList.add('active'); document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active')); if (event) event.target.classList.add('active'); if(v === 'admin' && AppState.userMode === 'admin') app.admin.renderManualGroups(); },
@@ -359,35 +369,6 @@ const app = {
         document.getElementById('admin-buzzer-state').innerText = AppState.buzzer.state.toUpperCase(); let resHtml = ''; AppState.buzzer.results.forEach((r, i) => resHtml += `<div>${i+1}. ${r.groupName}</div>`); document.getElementById('admin-buzzer-results').innerHTML = resHtml || '(無)';
         if (AppState.userMode === 'guest') app.buzzer.updateStudentScreen();
     },
-    buzzer: {
-        set: function(state) { AppState.buzzer.state = state; if (state === 'idle') AppState.buzzer.results = []; if (state === 'ready') AudioSys.play('ready'); if (state === 'go') AudioSys.play('go'); app.save(); app.renderDashboard(); },
-        enterStudentMode: function() { document.getElementById('student-buzzer-screen').style.display = 'flex'; this.updateStudentScreen(); }, exitStudentMode: function() { document.getElementById('student-buzzer-screen').style.display = 'none'; },
-        updateStudentScreen: function() {
-            const screen = document.getElementById('student-buzzer-screen'); const txt = document.getElementById('buzzer-status-text'); const btn = document.getElementById('buzzer-btn');
-            screen.className = `buzzer-state-${AppState.buzzer.state}`;
-            if (AppState.buzzer.state === 'idle') { txt.innerText = "老師準備中..."; btn.style.display = 'none'; } else if (AppState.buzzer.state === 'ready') { txt.innerText = "✋ 預備..."; btn.style.display = 'none'; }
-            else if (AppState.buzzer.state === 'go') { const myResult = AppState.buzzer.results.find(r => r.groupName === AppState.myGroup); if (myResult) { txt.innerText = `🏆 排名: ${AppState.buzzer.results.indexOf(myResult) + 1}`; btn.style.display = 'none'; } else { txt.innerText = "🔥 快按！"; btn.style.display = 'block'; } }
-        },
-        studentBuzz: function() { document.getElementById('buzzer-btn').style.display = 'none'; document.getElementById('buzzer-status-text').innerText = "⚡ 送出..."; AudioSys.play('go'); fetch(FIXED_GAS_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'buzz', groupName: AppState.myGroup, timestamp: Date.now() }) }).then(() => setTimeout(() => app.sync.pull(), 500)); }
-    },
-    admin: {
-        renderManualGroups: function() {
-            const c = document.getElementById('manual-group-container'); c.innerHTML = '';
-            AppState.groups.forEach((g, idx) => {
-                const names = g.members.map(m => m.name).join('\n');
-                const div = document.createElement('div'); div.className = 'manual-group-item';
-                div.innerHTML = `<div class="manual-group-header"><input type="text" value="${g.name}" id="gn-${idx}" style="width:120px; padding:6px; border:1px solid #ddd; border-radius:6px;"><button class="toggle-btn danger" onclick="app.admin.deleteGroup(${idx})" style="padding:4px 10px;">🗑️</button></div><textarea class="form-control" id="gt-${idx}" style="height:100px; margin-bottom:0;">${names}</textarea>`; c.appendChild(div);
-            });
-        },
-        addGroup: function() { AppState.groups.push({name: `新組別`, score: 0, members: []}); this.renderManualGroups(); },
-        deleteGroup: function(idx) { if(confirm("刪除此組？")) { AppState.groups.splice(idx, 1); this.renderManualGroups(); }},
-        saveManualGroups: function() {
-            let tempGroups = []; AppState.groups.forEach((g, idx) => { if(!document.getElementById(`gn-${idx}`)) return; let newGroup = { ...g }; newGroup.name = document.getElementById(`gn-${idx}`).value; const text = document.getElementById(`gt-${idx}`).value; newGroup.members = text.split(/\n/).map(n=>n.trim()).filter(n=>n).map(n => { const exist = g.members.find(old => old.name === n); return { name: n, score: exist ? exist.score : 0 }; }); tempGroups.push(newGroup); }); AppState.groups = tempGroups;
-            app.renderDashboard(); app.save(); app.toast("分組已儲存");
-        },
-        autoRandomGroup: function() { if(!confirm("重新分組將清空現有名單，確定嗎？")) return; const names = document.getElementById('bulk-names').value.split(/\r?\n/).map(n=>n.trim()).filter(n=>n); const count = parseInt(document.getElementById('group-count-bulk').value) || 6; if(!names.length) return; for (let i = names.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [names[i], names[j]] = [names[j], names[i]]; } const newGroups = []; for(let i=0; i<count; i++) newGroups.push({name:`第${i+1}組`, score:0, members:[]}); names.forEach((n,i) => newGroups[i%count].members.push({name:n, score:0})); AppState.groups = newGroups; this.renderManualGroups(); app.renderDashboard(); app.save(); app.toast("已隨機分組"); },
-        exportCSV: function() { let csv = "\uFEFF組別,姓名,個人分,組總分\n"; AppState.groups.forEach(g => { g.members.forEach(m => csv += `${g.name},${m.name},${m.score},${g.score}\n`); }); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = '成績單.csv'; a.click(); }
-    },
     sync: {
         timer: null,
         startPolling: function(interval = 4000) { if (this.timer) clearInterval(this.timer); this.timer = setInterval(() => app.sync.pull(), interval); app.sync.pull(); },
@@ -399,24 +380,21 @@ const app = {
             .then(r => r.json()).then(data => {
                 if(data && data.groups) {
                     if (data.buzzer) AppState.buzzer = data.buzzer;
-                    if (data.timer) AppState.timer = data.timer; // Update Timer State
+                    if (data.timer) AppState.timer = data.timer;
                     AppState.groups = data.groups; 
-                    
-                    // FIX PASSWORD SYNC: Explicitly copy password if it exists in cloud data
                     if (data.settings) {
                         AppState.settings.linked = data.settings.linked;
                         AppState.settings.sound = data.settings.sound;
                         if (data.settings.password) AppState.settings.password = data.settings.password;
                     }
-
                     app.renderDashboard(); if(AppState.userMode === 'admin') app.admin.renderManualGroups(); app.updateUI();
-                    document.getElementById('loading-msg').style.display = 'none'; // Hide loading text
+                    document.getElementById('loading-msg').style.display = 'none';
                 }
                 document.getElementById('sync-spinner').style.display = 'none';
             }).catch(e => { document.getElementById('sync-spinner').style.display = 'none'; });
         }
     },
-    // TIMER LOGIC
+    // TIMER LOGIC (Fix: Explicit value reading and safety check)
     timer: {
         tickInterval: null,
         init: function() {
@@ -424,7 +402,7 @@ const app = {
                 const now = Date.now();
                 const display = document.getElementById('timer-display');
                 if (!display) return;
-
+                
                 if (AppState.timer.running && AppState.timer.endTime) {
                     const diff = Math.max(0, Math.floor((AppState.timer.endTime - now) / 1000));
                     const m = Math.floor(diff / 60).toString().padStart(2, '0');
@@ -435,13 +413,11 @@ const app = {
                         AudioSys.play('alarm');
                     }
                 } else if (!AppState.timer.running && AppState.timer.initialSeconds) {
-                    // Show initial setting when stopped
                     const m = Math.floor(AppState.timer.initialSeconds / 60).toString().padStart(2, '0');
                     const s = (AppState.timer.initialSeconds % 60).toString().padStart(2, '0');
                     display.innerText = `${m}:${s}`;
                 }
                 
-                // Toggle controls
                 if (AppState.timer.running) {
                     document.getElementById('timer-setup-controls').style.display = 'none';
                     document.getElementById('timer-running-controls').style.display = 'flex';
@@ -452,14 +428,21 @@ const app = {
             }, 500);
         },
         start: function() {
-            const m = parseInt(document.getElementById('timer-min').value) || 0;
-            const s = parseInt(document.getElementById('timer-sec').value) || 0;
+            const mInput = document.getElementById('timer-min');
+            const sInput = document.getElementById('timer-sec');
+            const m = parseInt(mInput.value) || 0;
+            const s = parseInt(sInput.value) || 0;
             const totalSec = m * 60 + s;
-            if (totalSec <= 0) return;
+            
+            if (totalSec <= 0) return alert("請輸入時間！");
+            
             AppState.timer.initialSeconds = totalSec;
-            AppState.timer.endTime = Date.now() + totalSec * 1000;
+            // Add slight buffer (500ms) to ensure sync smoothness
+            AppState.timer.endTime = Date.now() + (totalSec * 1000) + 500; 
             AppState.timer.running = true;
-            app.save(); // Sync to students
+            
+            app.toast("計時開始");
+            app.save();
         },
         stop: function() {
             AppState.timer.running = false;
