@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>奕鈞老師的課堂 - iClass Pro v6.4</title>
+    <title>奕鈞老師的課堂 - iClass Pro v6.5</title>
     <style>
         :root {
             --ios-blue: #007AFF;
@@ -357,10 +357,11 @@
 
 <script>
 /**
- * iClass Pro v6.4 - Fast Polling & UI Fixes
+ * iClass Pro v6.5 - Buzzer Overlay Fix
  */
 const FIXED_GAS_URL = "https://script.google.com/macros/s/AKfycbwtX0PXMlu2oksFO8IqUuRoywceloA0aDSpQ0QVxo-VW4a9i6uUlJxH4Oq1QqvhWSEc/exec";
 const AppState = { groups: [], buzzer: { state: 'idle', results: [] }, settings: { linked: true, sound: true, gasUrl: FIXED_GAS_URL, password: '1234' }, userMode: 'guest', myGroup: null };
+let lastShownWinner = null; // New variable to track shown winner
 
 const AudioSys = { ctx: null, playTone: function(freq, type, dur) { if (!AppState.settings.sound) return; if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); const o = this.ctx.createOscillator(); const g = this.ctx.createGain(); o.type = type; o.frequency.value = freq; g.gain.setValueAtTime(0.1, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur); o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + dur); }, play: function(key) { if(AppState.userMode === 'guest' && key !== 'buzz') return; switch(key) { case 'tick': this.playTone(400, 'square', 0.05); break; case 'win': this.playTone(523, 'sine', 0.1); setTimeout(()=>this.playTone(659, 'sine', 0.1), 100); setTimeout(()=>this.playTone(784, 'sine', 0.3), 200); break; case 'click': this.playTone(800, 'sine', 0.05); break; case 'ready': this.playTone(440, 'triangle', 0.3); break; case 'go': this.playTone(880, 'square', 0.5); break; case 'timeup': this.playTone(600, 'sawtooth', 0.5); setTimeout(()=>this.playTone(600, 'sawtooth', 0.5), 600); break; } } };
 const app = {
@@ -398,8 +399,8 @@ const app = {
             else { alert("密碼太短"); }
         }
     },
-    loadLocal: function() { const d = localStorage.getItem('classDataV6_4'); if (d) { const p = JSON.parse(d); AppState.groups = p.groups || []; AppState.settings = Object.assign(AppState.settings, p.settings); AppState.buzzer = p.buzzer || { state: 'idle', results: [] }; this.updateUI(); } },
-    save: function() { if (AppState.userMode === 'guest') return; AppState.settings.gasUrl = FIXED_GAS_URL; localStorage.setItem('classDataV6_4', JSON.stringify(AppState)); this.sync.push(); },
+    loadLocal: function() { const d = localStorage.getItem('classDataV6_5'); if (d) { const p = JSON.parse(d); AppState.groups = p.groups || []; AppState.settings = Object.assign(AppState.settings, p.settings); AppState.buzzer = p.buzzer || { state: 'idle', results: [] }; this.updateUI(); } },
+    save: function() { if (AppState.userMode === 'guest') return; AppState.settings.gasUrl = FIXED_GAS_URL; localStorage.setItem('classDataV6_5', JSON.stringify(AppState)); this.sync.push(); },
     updateUI: function() { document.getElementById('link-status').innerText = AppState.settings.linked ? 'ON' : 'OFF'; document.getElementById('toggle-link').className = `toggle-btn ${AppState.settings.linked ? 'active' : ''}`; document.getElementById('toggle-sound').className = `toggle-btn ${AppState.settings.sound ? 'active-green' : ''}`; },
     toggleLink: function() { AppState.settings.linked = !AppState.settings.linked; this.updateUI(); this.save(); }, toggleSound: function() { AppState.settings.sound = !AppState.settings.sound; this.updateUI(); this.save(); },
     switchView: function(v) { 
@@ -425,16 +426,21 @@ const app = {
         AppState.buzzer.results.forEach((r, i) => resHtml += `<div>${i+1}. ${r.groupName}</div>`); 
         document.getElementById('admin-buzzer-results').innerHTML = resHtml || '(尚未有人搶答)';
         
-        // Show Big Winner Overlay
+        // --- FIXED: One-time Winner Overlay Logic ---
+        // Only show if in 'go' state, has results, and hasn't shown this specific winner yet
         if (AppState.userMode === 'admin' && AppState.buzzer.results.length > 0 && AppState.buzzer.state === 'go') {
              const winnerName = AppState.buzzer.results[0].groupName;
-             const overlay = document.getElementById('quick-answer-winner-overlay');
-             if(overlay.style.display === 'none') {
+             // Check against last shown variable
+             if (lastShownWinner !== winnerName) {
                  document.getElementById('quick-winner-name').textContent = winnerName;
-                 overlay.style.display = 'flex';
+                 document.getElementById('quick-answer-winner-overlay').style.display = 'flex';
                  AudioSys.play('win');
+                 lastShownWinner = winnerName; // Mark as shown
              }
-        } else if (AppState.buzzer.state !== 'go') {
+        } 
+        
+        // Ensure overlay is hidden if state is not 'go' (e.g. idle/ready)
+        if (AppState.buzzer.state !== 'go') {
              document.getElementById('quick-answer-winner-overlay').style.display = 'none';
         }
 
@@ -442,7 +448,20 @@ const app = {
     },
     buzzer: {
         isSending: false, 
-        set: function(state) { AppState.buzzer.state = state; if (state === 'idle') { AppState.buzzer.results = []; document.getElementById('quick-answer-winner-overlay').style.display='none'; } if (state === 'ready') AudioSys.play('ready'); if (state === 'go') AudioSys.play('go'); app.save(); app.renderDashboard(); },
+        set: function(state) { 
+            AppState.buzzer.state = state; 
+            if (state === 'idle') { 
+                AppState.buzzer.results = []; 
+                lastShownWinner = null; // Reset winner memory on Idle
+                document.getElementById('quick-answer-winner-overlay').style.display='none'; 
+            } 
+            if (state === 'ready') {
+                AudioSys.play('ready');
+                lastShownWinner = null; // Also reset on Ready to be safe
+            }
+            if (state === 'go') AudioSys.play('go'); 
+            app.save(); app.renderDashboard(); 
+        },
         enterStudentMode: function() { document.getElementById('student-buzzer-screen').style.display = 'flex'; this.updateStudentScreen(); }, exitStudentMode: function() { document.getElementById('student-buzzer-screen').style.display = 'none'; },
         updateStudentScreen: function() {
             const screen = document.getElementById('student-buzzer-screen'); const txt = document.getElementById('buzzer-status-text'); const btn = document.getElementById('buzzer-btn');
@@ -460,7 +479,6 @@ const app = {
                 else { 
                     txt.innerText = "🔥 快按！"; 
                     btn.style.display = 'block'; 
-                    // Random Position
                     if(btn.style.position !== 'absolute') {
                         btn.style.position = 'absolute';
                         const x = Math.random() * (window.innerWidth - 220);
