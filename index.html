@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>奕鈞老師的課堂 - iClass Pro v5.4</title>
+    <title>奕鈞老師的課堂 - iClass Pro v6.0</title>
     <style>
         :root {
             --ios-blue: #007AFF;
@@ -105,10 +105,10 @@
         .member-name { font-weight: 500; font-size: 1rem; }
         .member-score { font-size: 1.1rem; font-weight: 600; color: #86868b; width: 30px; text-align: center;}
 
-        /* TIMER BOX - SOLID STYLE (No Glass to avoid iOS bugs) */
+        /* TIMER BOX - SOLID STYLE */
         .timer-container {
             margin-top: 2rem;
-            background: #ffffff; /* Solid White */
+            background: #ffffff;
             border-radius: 16px;
             padding: 1.5rem;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
@@ -123,13 +123,8 @@
             margin: 10px 0;
             letter-spacing: 2px;
         }
-        .timer-controls {
-            display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
-        }
-        .timer-input {
-            width: 60px; padding: 5px; font-size: 1.2rem; text-align: center;
-            border: 1px solid #ddd; border-radius: 8px; margin: 0 5px;
-        }
+        .timer-controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .timer-input { width: 60px; padding: 5px; font-size: 1.2rem; text-align: center; border: 1px solid #ddd; border-radius: 8px; margin: 0 5px; }
         .timer-label { font-size: 0.9rem; color: #8e8e93; font-weight: 600; }
 
         /* ADMIN */
@@ -160,32 +155,15 @@
         .login-btn { width: 100%; padding: 14px; border-radius: 14px; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; margin-top: 12px; }
         #login-status-bar { margin-bottom: 15px; font-size: 0.9rem; font-weight: 600; color: #1c1c1e; padding: 8px; background: rgba(255,255,255,0.6); border-radius: 8px;}
 
-        /* QR CODE FAB */
-        .qr-code-fab {
-            position: fixed; bottom: 30px; left: 30px; z-index: 100;
-            width: 64px; height: 64px; background: white; border-radius: 50%;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            box-shadow: var(--shadow-md); cursor: pointer; text-decoration: none;
-            color: var(--ios-blue); font-weight: 600; font-size: 0.8rem;
-        }
+        /* FABs */
+        .qr-code-fab { position: fixed; bottom: 30px; left: 30px; z-index: 100; width: 64px; height: 64px; background: white; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow-md); cursor: pointer; text-decoration: none; color: var(--ios-blue); font-weight: 600; font-size: 0.8rem; }
         .qr-code-fab img { width: 32px; height: 32px; }
-
-        /* FAB CONTAINER */
         .fab-container { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column-reverse; gap: 15px; z-index: 100; }
-        .fab-main { 
-            width: 64px; height: 64px; border-radius: 50%; background: var(--ios-blue); color: white; border: none; 
-            box-shadow: 0 8px 20px rgba(0, 122, 255, 0.4); font-size: 28px; cursor: pointer; 
-            display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);
-            transition: transform 0.2s;
-        }
+        .fab-main { width: 64px; height: 64px; border-radius: 50%; background: var(--ios-blue); color: white; border: none; box-shadow: 0 8px 20px rgba(0, 122, 255, 0.4); font-size: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); transition: transform 0.2s; }
         .fab-main:active { transform: scale(0.9); }
         .fab-menu { display: none; flex-direction: column; gap: 12px; align-items: flex-end; }
         .fab-container:hover .fab-menu, .fab-menu.show { display: flex; }
-        .fab-item { 
-            background: rgba(255,255,255,0.9); color: #1c1c1e; padding: 12px 20px; border-radius: 20px; border: none; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; 
-            backdrop-filter: blur(10px); white-space: nowrap;
-        }
+        .fab-item { background: rgba(255,255,255,0.9); color: #1c1c1e; padding: 12px 20px; border-radius: 20px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(10px); white-space: nowrap; }
 
         /* MODALS */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
@@ -205,10 +183,7 @@
 <div id="login-overlay">
     <div class="login-card">
         <h2 style="color: var(--ios-blue); margin-top: 0;">🔒 身份驗證</h2>
-        
-        <!-- 新增：同步狀態提示 -->
         <div id="login-status-bar">☁️ 連線中...</div>
-
         <div style="margin-bottom: 20px;">
             <input type="password" id="password-input" class="form-control" placeholder="請輸入老師密碼" style="text-align: center; background:#f2f2f7;">
             <button class="login-btn" style="background: var(--ios-blue); color: white;" onclick="app.auth.loginAdmin()">👨‍🏫 老師登入</button>
@@ -250,7 +225,7 @@
         
         <div id="groups-container" class="dashboard-grid"></div>
 
-        <!-- NEW: COUNTDOWN TIMER (Solid Style for Stability) -->
+        <!-- COUNTDOWN TIMER -->
         <div id="dashboard-timer" class="timer-container admin-only">
             <h3 style="margin:0 0 10px 0; color:#1c1c1e;">⏱️ 倒數計時器</h3>
             <div id="timer-display" class="timer-display">00:00</div>
@@ -288,6 +263,10 @@
     <section id="view-admin" class="view-section admin-only">
         <div class="admin-box">
             <h3 class="admin-section-title">👥 分組管理</h3>
+            <div style="margin-bottom:1rem; text-align:center;">
+                <button class="toggle-btn active" style="width:100%; padding:14px; font-size:1rem; background:#FFCC00; color:black; justify-content:center;" onclick="app.admin.importFromSheet()">📥 從試算表「名單設定」載入</button>
+                <p style="font-size:0.8rem; color:#888; margin-top:5px;">(注意：此操作會重置所有分數)</p>
+            </div>
             <div id="manual-group-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;"></div>
             <button class="toggle-btn" style="width:100%; border:2px dashed #ccc; background:transparent; color:#86868b; margin-top:15px; padding:12px; justify-content:center;" onclick="app.admin.addGroup()">➕ 新增一組</button>
             <button class="toggle-btn active" onclick="app.admin.saveManualGroups()" style="margin-top: 20px; width: 100%; justify-content: center; padding: 14px; font-size:1rem;">💾 儲存分組</button>
@@ -310,13 +289,11 @@
     </section>
 </main>
 
-<!-- QR Code FAB (Left) -->
 <a href="#" class="qr-code-fab" onclick="document.getElementById('modal-qr-overlay').classList.add('open')">
     <img src="./assets/img/student_qr.png" alt="QR Code">
     <span>搶答</span>
 </a>
 
-<!-- Lottery FAB (Right) -->
 <div class="fab-container admin-only">
     <button class="fab-main" onclick="document.querySelector('.fab-menu').classList.toggle('show')">🎲</button>
     <div class="fab-menu">
@@ -325,7 +302,6 @@
     </div>
 </div>
 
-<!-- MODALS -->
 <div id="modal-qr-overlay" class="modal-overlay" onclick="this.classList.remove('open')">
     <div id="modal-qr" class="modal">
         <h3 style="margin-top:0;">學生搶答入口</h3>
@@ -354,9 +330,8 @@
 
 <script>
 /**
- * iClass Pro v5.4 - Timer & Password Sync Fix
+ * iClass Pro v6.0 - Import from Sheet & Timer & Password Fix
  */
-
 const FIXED_GAS_URL = "https://script.google.com/macros/s/AKfycbwtX0PXMlu2oksFO8IqUuRoywceloA0aDSpQ0QVxo-VW4a9i6uUlJxH4Oq1QqvhWSEc/exec";
 const AppState = { groups: [], buzzer: { state: 'idle', results: [] }, settings: { linked: true, sound: true, gasUrl: FIXED_GAS_URL, password: '1234' }, userMode: 'guest', myGroup: null };
 
@@ -365,18 +340,14 @@ const app = {
     init: function() { 
         for(let i=0; i<6; i++) AppState.groups.push({name: `第${i+1}組`, score:0, members:[]}); 
         this.loadLocal(); 
-        AppState.settings.gasUrl = FIXED_GAS_URL; 
-        document.getElementById('gas-url').value = FIXED_GAS_URL; 
+        AppState.settings.gasUrl = FIXED_GAS_URL; document.getElementById('gas-url').value = FIXED_GAS_URL; 
         this.renderDashboard(); 
-        // FIX: Force Pull immediately on load to get correct password
-        app.sync.pull();
+        app.sync.pull(); // Force sync password on load
     },
     auth: {
         loginAdmin: function() { 
-            // Password check relies on AppState which is now updated via sync.pull() on load
-            if (document.getElementById('password-input').value === AppState.settings.password) { 
-                AppState.userMode = 'admin'; this.applyMode(); 
-            } else { alert("密碼錯誤！(預設: 1234)"); } 
+            if (document.getElementById('password-input').value === AppState.settings.password) { AppState.userMode = 'admin'; this.applyMode(); } 
+            else { alert("密碼錯誤！"); } 
         },
         loginGuest: function() {
             AppState.userMode = 'guest'; this.applyMode();
@@ -396,15 +367,12 @@ const app = {
         },
         updatePassword: function() {
             const newPass = document.getElementById('admin-pass-setter').value.trim();
-            if (newPass && newPass.length >= 4) {
-                if (confirm(`確定要將密碼修改為 "${newPass}" 嗎？`)) {
-                    AppState.settings.password = newPass; app.save(); app.toast("密碼已更新"); document.getElementById('admin-pass-setter').value = '';
-                }
-            } else { alert("密碼長度至少需要 4 個字元"); }
+            if (newPass && newPass.length >= 4) { if (confirm(`確定修改密碼為 "${newPass}"？`)) { AppState.settings.password = newPass; app.save(); app.toast("密碼已更新"); document.getElementById('admin-pass-setter').value = ''; } } 
+            else { alert("密碼太短"); }
         }
     },
-    loadLocal: function() { const d = localStorage.getItem('classDataV5_4'); if (d) { const p = JSON.parse(d); AppState.groups = p.groups || []; AppState.settings = Object.assign(AppState.settings, p.settings); AppState.buzzer = p.buzzer || { state: 'idle', results: [] }; this.updateUI(); } },
-    save: function() { if (AppState.userMode === 'guest') return; AppState.settings.gasUrl = FIXED_GAS_URL; localStorage.setItem('classDataV5_4', JSON.stringify(AppState)); this.sync.push(); },
+    loadLocal: function() { const d = localStorage.getItem('classDataV6'); if (d) { const p = JSON.parse(d); AppState.groups = p.groups || []; AppState.settings = Object.assign(AppState.settings, p.settings); AppState.buzzer = p.buzzer || { state: 'idle', results: [] }; this.updateUI(); } },
+    save: function() { if (AppState.userMode === 'guest') return; AppState.settings.gasUrl = FIXED_GAS_URL; localStorage.setItem('classDataV6', JSON.stringify(AppState)); this.sync.push(); },
     updateUI: function() { document.getElementById('link-status').innerText = AppState.settings.linked ? 'ON' : 'OFF'; document.getElementById('toggle-link').className = `toggle-btn ${AppState.settings.linked ? 'active' : ''}`; document.getElementById('toggle-sound').className = `toggle-btn ${AppState.settings.sound ? 'active-green' : ''}`; },
     toggleLink: function() { AppState.settings.linked = !AppState.settings.linked; this.updateUI(); this.save(); }, toggleSound: function() { AppState.settings.sound = !AppState.settings.sound; this.updateUI(); this.save(); },
     switchView: function(v) { document.querySelectorAll('.view-section').forEach(e => e.classList.remove('active')); document.getElementById('view-'+v).classList.add('active'); document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active')); if (event) event.target.classList.add('active'); if(v === 'admin' && AppState.userMode === 'admin') app.admin.renderManualGroups(); },
@@ -433,6 +401,14 @@ const app = {
         },
         studentBuzz: function() { document.getElementById('buzzer-btn').style.display = 'none'; document.getElementById('buzzer-status-text').innerText = "⚡ 送出..."; AudioSys.play('go'); fetch(FIXED_GAS_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'buzz', groupName: AppState.myGroup, timestamp: Date.now() }) }).then(() => setTimeout(() => app.sync.pull(), 500)); }
     },
+    timer: {
+        interval: null, timeLeft: 0,
+        start: function() { if (this.interval) return; const m = parseInt(document.getElementById('timer-min').value)||0; const s = parseInt(document.getElementById('timer-sec').value)||0; if (this.timeLeft === 0) this.timeLeft = m * 60 + s; if (this.timeLeft <= 0) return; this.interval = setInterval(() => { this.timeLeft--; this.updateDisplay(); if (this.timeLeft <= 0) { this.pause(); AudioSys.play('timeup'); alert("時間到！"); } }, 1000); this.updateDisplay(); },
+        pause: function() { clearInterval(this.interval); this.interval = null; },
+        reset: function() { this.pause(); this.timeLeft = 0; const m = parseInt(document.getElementById('timer-min').value)||0; const s = parseInt(document.getElementById('timer-sec').value)||0; document.getElementById('timer-display').innerText = `${this.pad(m)}:${this.pad(s)}`; },
+        updateDisplay: function() { const m = Math.floor(this.timeLeft / 60); const s = this.timeLeft % 60; document.getElementById('timer-display').innerText = `${this.pad(m)}:${this.pad(s)}`; },
+        pad: function(n) { return n < 10 ? '0' + n : n; }
+    },
     admin: {
         renderManualGroups: function() {
             const c = document.getElementById('manual-group-container'); c.innerHTML = '';
@@ -448,7 +424,16 @@ const app = {
             let tempGroups = []; AppState.groups.forEach((g, idx) => { if(!document.getElementById(`gn-${idx}`)) return; let newGroup = { ...g }; newGroup.name = document.getElementById(`gn-${idx}`).value; const text = document.getElementById(`gt-${idx}`).value; newGroup.members = text.split(/\n/).map(n=>n.trim()).filter(n=>n).map(n => { const exist = g.members.find(old => old.name === n); return { name: n, score: exist ? exist.score : 0 }; }); tempGroups.push(newGroup); }); AppState.groups = tempGroups;
             app.renderDashboard(); app.save(); app.toast("分組已儲存");
         },
-        autoRandomGroup: function() { if(!confirm("重新分組將清空現有名單，確定嗎？")) return; const names = document.getElementById('bulk-names').value.split(/\r?\n/).map(n=>n.trim()).filter(n=>n); const count = parseInt(document.getElementById('group-count-bulk').value) || 6; if(!names.length) return; for (let i = names.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [names[i], names[j]] = [names[j], names[i]]; } const newGroups = []; for(let i=0; i<count; i++) newGroups.push({name:`第${i+1}組`, score:0, members:[]}); names.forEach((n,i) => newGroups[i%count].members.push({name:n, score:0})); AppState.groups = newGroups; this.renderManualGroups(); app.renderDashboard(); app.save(); app.toast("已隨機分組"); },
+        importFromSheet: function() {
+            if(!confirm("從試算表載入將會「重置所有分數」，確定嗎？")) return;
+            document.getElementById('sync-status').innerText = '⏳ 讀取試算表中...';
+            fetch(FIXED_GAS_URL + '?action=import_roster', { method: 'GET', redirect: 'follow' })
+            .then(r => r.json()).then(data => {
+                if(data.groups) { AppState.groups = data.groups; app.renderDashboard(); app.admin.renderManualGroups(); app.save(); app.toast("匯入成功！"); } 
+                else { alert(data.error || "匯入失敗"); }
+                document.getElementById('sync-status').innerText = '🟢 連線正常';
+            }).catch(e => alert("連線錯誤"));
+        },
         exportCSV: function() { let csv = "\uFEFF組別,姓名,個人分,組總分\n"; AppState.groups.forEach(g => { g.members.forEach(m => csv += `${g.name},${m.name},${m.score},${g.score}\n`); }); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = '成績單.csv'; a.click(); }
     },
     sync: {
@@ -463,10 +448,12 @@ const app = {
                 if(data && data.groups) {
                     if (data.buzzer) AppState.buzzer = data.buzzer;
                     AppState.groups = data.groups; if (data.settings && data.settings.linked !== undefined) AppState.settings.linked = data.settings.linked;
-                    // FIX: Sync password from cloud
+                    
+                    // --- PASSWORD SYNC FIX ---
                     if (data.settings && data.settings.password) AppState.settings.password = data.settings.password;
                     
                     app.renderDashboard(); if(AppState.userMode === 'admin') app.admin.renderManualGroups(); app.updateUI();
+                    
                     // Update login status
                     const statusEl = document.getElementById('login-status-bar');
                     if(statusEl) statusEl.innerText = "☁️ 雲端資料已更新 (v)";
@@ -496,45 +483,6 @@ const app = {
             };
             step();
         }
-    },
-    timer: {
-        interval: null,
-        timeLeft: 0,
-        start: function() {
-            if (this.interval) return;
-            const m = parseInt(document.getElementById('timer-min').value) || 0;
-            const s = parseInt(document.getElementById('timer-sec').value) || 0;
-            if (this.timeLeft === 0) this.timeLeft = m * 60 + s;
-            if (this.timeLeft <= 0) return;
-            
-            this.interval = setInterval(() => {
-                this.timeLeft--;
-                this.updateDisplay();
-                if (this.timeLeft <= 0) {
-                    this.pause();
-                    AudioSys.play('timeup');
-                    alert("時間到！");
-                }
-            }, 1000);
-            this.updateDisplay();
-        },
-        pause: function() {
-            clearInterval(this.interval);
-            this.interval = null;
-        },
-        reset: function() {
-            this.pause();
-            this.timeLeft = 0;
-            const m = parseInt(document.getElementById('timer-min').value) || 0;
-            const s = parseInt(document.getElementById('timer-sec').value) || 0;
-            document.getElementById('timer-display').innerText = `${this.pad(m)}:${this.pad(s)}`;
-        },
-        updateDisplay: function() {
-            const m = Math.floor(this.timeLeft / 60);
-            const s = this.timeLeft % 60;
-            document.getElementById('timer-display').innerText = `${this.pad(m)}:${this.pad(s)}`;
-        },
-        pad: function(n) { return n < 10 ? '0' + n : n; }
     },
     toast: function(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 2000); }
 };
