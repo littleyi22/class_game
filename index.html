@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>奕鈞老師的課堂 - iClass Pro v6.3</title>
+    <title>奕鈞老師的課堂 - iClass Pro v6.4</title>
     <style>
         :root {
             --ios-blue: #007AFF;
@@ -139,13 +139,12 @@
         .buzzer-state-go { background: #E8F5E9 !important; }
         .buzzer-status-text { font-size: 2.5rem; font-weight: 800; margin-bottom: 20px; z-index: 2001; }
         
-        /* NEW BUZZER BUTTON STYLE (Referenced from example) */
         .buzzer-btn-main { 
             width: 200px; height: 200px; border-radius: 50%; border: 8px solid white; 
             background: linear-gradient(45deg, #ff6b6b, #ee5a24); 
             color: white; font-size: 2.5rem; font-weight: 800; 
             box-shadow: 0 10px 25px rgba(238, 82, 83, 0.6); 
-            cursor: pointer; display: none; position: absolute; /* Changed to absolute for random positioning */
+            cursor: pointer; display: none; position: absolute;
             animation: pulse 1.5s infinite;
             z-index: 2002;
         }
@@ -188,7 +187,7 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
-        /* NEW: Big Winner Overlay */
+        /* BIG WINNER OVERLAY */
         #quick-answer-winner-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px);
@@ -358,7 +357,7 @@
 
 <script>
 /**
- * iClass Pro v6.3 - Firebase-Style UI & Random Button
+ * iClass Pro v6.4 - Fast Polling & UI Fixes
  */
 const FIXED_GAS_URL = "https://script.google.com/macros/s/AKfycbwtX0PXMlu2oksFO8IqUuRoywceloA0aDSpQ0QVxo-VW4a9i6uUlJxH4Oq1QqvhWSEc/exec";
 const AppState = { groups: [], buzzer: { state: 'idle', results: [] }, settings: { linked: true, sound: true, gasUrl: FIXED_GAS_URL, password: '1234' }, userMode: 'guest', myGroup: null };
@@ -399,8 +398,8 @@ const app = {
             else { alert("密碼太短"); }
         }
     },
-    loadLocal: function() { const d = localStorage.getItem('classDataV6_3'); if (d) { const p = JSON.parse(d); AppState.groups = p.groups || []; AppState.settings = Object.assign(AppState.settings, p.settings); AppState.buzzer = p.buzzer || { state: 'idle', results: [] }; this.updateUI(); } },
-    save: function() { if (AppState.userMode === 'guest') return; AppState.settings.gasUrl = FIXED_GAS_URL; localStorage.setItem('classDataV6_3', JSON.stringify(AppState)); this.sync.push(); },
+    loadLocal: function() { const d = localStorage.getItem('classDataV6_4'); if (d) { const p = JSON.parse(d); AppState.groups = p.groups || []; AppState.settings = Object.assign(AppState.settings, p.settings); AppState.buzzer = p.buzzer || { state: 'idle', results: [] }; this.updateUI(); } },
+    save: function() { if (AppState.userMode === 'guest') return; AppState.settings.gasUrl = FIXED_GAS_URL; localStorage.setItem('classDataV6_4', JSON.stringify(AppState)); this.sync.push(); },
     updateUI: function() { document.getElementById('link-status').innerText = AppState.settings.linked ? 'ON' : 'OFF'; document.getElementById('toggle-link').className = `toggle-btn ${AppState.settings.linked ? 'active' : ''}`; document.getElementById('toggle-sound').className = `toggle-btn ${AppState.settings.sound ? 'active-green' : ''}`; },
     toggleLink: function() { AppState.settings.linked = !AppState.settings.linked; this.updateUI(); this.save(); }, toggleSound: function() { AppState.settings.sound = !AppState.settings.sound; this.updateUI(); this.save(); },
     switchView: function(v) { 
@@ -408,10 +407,6 @@ const app = {
         document.getElementById('view-'+v).classList.add('active'); 
         document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active')); 
         if (event) event.target.classList.add('active'); 
-        
-        if (v === 'buzzer' && AppState.userMode === 'admin') app.sync.startPolling(1000); 
-        else if (AppState.userMode === 'admin') app.sync.startPolling(4000); 
-        
         if(v === 'admin' && AppState.userMode === 'admin') app.admin.renderManualGroups(); 
     },
     scoreGroup: function(idx, delta) { if (AppState.userMode === 'guest') return; AppState.groups[idx].score += delta; AudioSys.play('click'); this.renderDashboard(); this.save(); },
@@ -430,11 +425,10 @@ const app = {
         AppState.buzzer.results.forEach((r, i) => resHtml += `<div>${i+1}. ${r.groupName}</div>`); 
         document.getElementById('admin-buzzer-results').innerHTML = resHtml || '(尚未有人搶答)';
         
-        // Show Big Winner Overlay if new winner detected
+        // Show Big Winner Overlay
         if (AppState.userMode === 'admin' && AppState.buzzer.results.length > 0 && AppState.buzzer.state === 'go') {
              const winnerName = AppState.buzzer.results[0].groupName;
              const overlay = document.getElementById('quick-answer-winner-overlay');
-             // Only show if not currently visible to prevent annoying flashing
              if(overlay.style.display === 'none') {
                  document.getElementById('quick-winner-name').textContent = winnerName;
                  overlay.style.display = 'flex';
@@ -466,7 +460,7 @@ const app = {
                 else { 
                     txt.innerText = "🔥 快按！"; 
                     btn.style.display = 'block'; 
-                    // Random Position Logic
+                    // Random Position
                     if(btn.style.position !== 'absolute') {
                         btn.style.position = 'absolute';
                         const x = Math.random() * (window.innerWidth - 220);
@@ -475,10 +469,7 @@ const app = {
                         btn.style.top = y + 'px';
                     }
                 } 
-            } else {
-                // Reset button position logic for next round
-                btn.style.position = 'static';
-            }
+            } else { btn.style.position = 'static'; }
         },
         studentBuzz: function() { 
             if(!AppState.myGroup) return alert("未選擇組別，請重新整理");
@@ -524,7 +515,19 @@ const app = {
     },
     sync: {
         timer: null,
-        startPolling: function(interval = 4000) { if (this.timer) clearInterval(this.timer); this.timer = setInterval(() => app.sync.pull(), interval); app.sync.pull(); },
+        // 核心同步邏輯：使用變速輪詢 (0.5s - 4s)
+        start: function() { this.loop(); },
+        loop: function() {
+            if (this.timer) clearTimeout(this.timer);
+            let interval = 4000; // 預設 4秒
+            // 搶答模式下極速同步 (500ms)
+            if (AppState.buzzer.state !== 'idle') interval = 500; 
+            
+            this.timer = setTimeout(() => {
+                this.pull();
+                this.loop();
+            }, interval);
+        },
         manualSync: function() { document.getElementById('sync-status').innerText = '⏳ 同步中...'; app.save(); app.sync.pull(); },
         push: function() { document.getElementById('sync-spinner').style.display = 'block'; fetch(FIXED_GAS_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({action: 'save', data: AppState}) }).then(() => setTimeout(() => document.getElementById('sync-spinner').style.display = 'none', 1000)); },
         pull: function() {
