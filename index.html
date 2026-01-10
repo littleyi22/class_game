@@ -359,15 +359,19 @@
 
 <script>
 /**
- * iClass Pro v7.0 - Firebase Realtime Edition
- * 奕鈞老師專用版 - 混合架構 (GAS匯入名單 + Firebase即時搶答)
+ * iClass Pro v7.1 - Firebase Region Fix
+ * 修正資料庫網址與空資料防呆機制
  */
 const FIXED_GAS_URL = "https://script.google.com/macros/s/AKfycbwtX0PXMlu2oksFO8IqUuRoywceloA0aDSpQ0QVxo-VW4a9i6uUlJxH4Oq1QqvhWSEc/exec";
 
-// ▼▼▼ 請將這裡換成您剛剛複製的 firebaseConfig ▼▼▼
+// ▼▼▼ 設定區域：請確認 apiKey 還是您原本那組 ▼▼▼
 const firebaseConfig = {
   apiKey: "AIzaSyDqx3OutYXqDtOs_G7I5bfrvwQn6FuTcRY",
   authDomain: "class-game-cf05c.firebaseapp.com",
+  
+  // ★★★ 關鍵修正：補上這行新加坡節點的網址 ★★★
+  databaseURL: "https://class-game-cf05c-default-rtdb.asia-southeast1.firebasedatabase.app",
+  
   projectId: "class-game-cf05c",
   storageBucket: "class-game-cf05c.firebasestorage.app",
   messagingSenderId: "921340452730",
@@ -380,29 +384,40 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const AppState = { groups: [], buzzer: { state: 'idle', results: [] }, settings: { linked: true, sound: true, password: '1234' }, userMode: 'guest', myGroup: null };
+const AppState = { 
+    groups: [], 
+    buzzer: { state: 'idle', results: [] }, 
+    settings: { linked: true, sound: true, password: '1234' }, // 預設密碼
+    userMode: 'guest', 
+    myGroup: null 
+};
 let lastShownWinner = null; 
 
 const AudioSys = { ctx: null, playTone: function(freq, type, dur) { if (!AppState.settings.sound) return; if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); const o = this.ctx.createOscillator(); const g = this.ctx.createGain(); o.type = type; o.frequency.value = freq; g.gain.setValueAtTime(0.1, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur); o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + dur); }, play: function(key) { if(AppState.userMode === 'guest' && key !== 'buzz') return; switch(key) { case 'tick': this.playTone(400, 'square', 0.05); break; case 'win': this.playTone(523, 'sine', 0.1); setTimeout(()=>this.playTone(659, 'sine', 0.1), 100); setTimeout(()=>this.playTone(784, 'sine', 0.3), 200); break; case 'click': this.playTone(800, 'sine', 0.05); break; case 'ready': this.playTone(440, 'triangle', 0.3); break; case 'go': this.playTone(880, 'square', 0.5); break; case 'timeup': this.playTone(600, 'sawtooth', 0.5); setTimeout(()=>this.playTone(600, 'sawtooth', 0.5), 600); break; } } };
 
 const app = {
     init: function() { 
+        // 預設初始化 6 組，避免畫面全白
         for(let i=0; i<6; i++) AppState.groups.push({name: `第${i+1}組`, score:0, members:[]}); 
+        
         this.loadLocal(); 
         const gasInput = document.getElementById('gas-url');
         if(gasInput) gasInput.value = FIXED_GAS_URL; 
+        
         this.renderDashboard(); 
         this.sync.listen();
     },
     auth: {
         loginAdmin: function() { 
+            // 簡單驗證
             if (document.getElementById('password-input').value === AppState.settings.password) { AppState.userMode = 'admin'; this.applyMode(); } 
             else { alert("密碼錯誤！"); } 
         },
         loginGuest: function() {
             AppState.userMode = 'guest'; this.applyMode();
             const list = document.getElementById('guest-group-list'); list.innerHTML = '';
-            AppState.groups.forEach(g => {
+            // ★ 防呆：確保 groups 是一個陣列
+            (AppState.groups || []).forEach(g => {
                 const btn = document.createElement('button'); btn.className = 'toggle-btn'; btn.style.cssText = 'padding:14px; background:rgba(0,0,0,0.05); width:100%; justify-content:center;'; btn.innerText = g.name;
                 btn.onclick = () => { AppState.myGroup = g.name; document.getElementById('my-group-name').innerText = g.name; document.getElementById('modal-guest-select').classList.remove('open'); app.buzzer.enterStudentMode(); };
                 list.appendChild(btn);
@@ -431,24 +446,26 @@ const app = {
     },
     save: function() { 
         if (AppState.userMode === 'guest') return; 
+        // 存到 LocalStorage
         localStorage.setItem('classDataV7', JSON.stringify({settings: AppState.settings})); 
+        
+        // 存到 Firebase
         db.ref('classroom').set({
-            groups: AppState.groups,
-            buzzer: AppState.buzzer,
-            settings: { linked: AppState.settings.linked, password: AppState.settings.password }
+            groups: AppState.groups || [], // ★ 防呆
+            buzzer: AppState.buzzer || { state: 'idle', results: [] },
+            settings: { 
+                linked: AppState.settings.linked, 
+                // 這裡選擇把密碼也同步上去，方便跨裝置，但如果您希望每台電腦獨立密碼，可以拿掉這行
+                password: AppState.settings.password 
+            }
         });
     },
-    // ★★★ 修正後的 updateUI ★★★
     updateUI: function() { 
-        // 移除了對 link-status 的呼叫，並加入防呆機制
         const btnLink = document.getElementById('toggle-link');
         if(btnLink) btnLink.className = `toggle-btn ${AppState.settings.linked ? 'active' : ''}`;
         
         const btnSound = document.getElementById('toggle-sound');
         if(btnSound) btnSound.className = `toggle-btn ${AppState.settings.sound ? 'active-green' : ''}`; 
-        
-        const linkStatusText = document.getElementById('link-status');
-        if(linkStatusText) linkStatusText.innerText = AppState.settings.linked ? 'ON' : 'OFF';
     },
     switchView: function(v) { 
         document.querySelectorAll('.view-section').forEach(e => e.classList.remove('active')); 
@@ -458,37 +475,64 @@ const app = {
         if (event && event.target) event.target.classList.add('active'); 
         if(v === 'admin' && AppState.userMode === 'admin') app.admin.renderManualGroups(); 
     },
-    scoreGroup: function(idx, delta) { if (AppState.userMode === 'guest') return; AppState.groups[idx].score += delta; AudioSys.play('click'); this.save(); },
-    scoreMember: function(gIdx, mIdx, delta) { if (AppState.userMode === 'guest') return; AppState.groups[gIdx].members[mIdx].score += delta; if (AppState.settings.linked) AppState.groups[gIdx].score += delta; AudioSys.play('click'); this.save(); },
+    scoreGroup: function(idx, delta) { 
+        if (AppState.userMode === 'guest') return; 
+        if(AppState.groups[idx]) {
+            AppState.groups[idx].score += delta; 
+            AudioSys.play('click'); 
+            this.save(); 
+        }
+    },
+    scoreMember: function(gIdx, mIdx, delta) { 
+        if (AppState.userMode === 'guest') return; 
+        if(AppState.groups[gIdx] && AppState.groups[gIdx].members[mIdx]) {
+            AppState.groups[gIdx].members[mIdx].score += delta; 
+            if (AppState.settings.linked) AppState.groups[gIdx].score += delta; 
+            AudioSys.play('click'); 
+            this.save(); 
+        }
+    },
     renderDashboard: function() {
         const c = document.getElementById('groups-container'); 
         if(!c) return;
         c.innerHTML = '';
         
         const banner = document.getElementById('dashboard-buzzer-banner');
-        if (AppState.buzzer.state !== 'idle') { 
+        if (AppState.buzzer && AppState.buzzer.state !== 'idle') { 
             if(banner) banner.style.display = 'block'; 
-            let html = ''; AppState.buzzer.results.forEach((r, i) => html += `<div>#${i+1} ${r.groupName}</div>`); 
+            let html = ''; 
+            (AppState.buzzer.results || []).forEach((r, i) => html += `<div>#${i+1} ${r.groupName}</div>`); 
             const rankList = document.getElementById('buzzer-rank-list');
             if(rankList) rankList.innerHTML = html || '等待搶答...'; 
         } else { 
             if(banner) banner.style.display = 'none'; 
         }
         
-        AppState.groups.forEach((g, gIdx) => {
-            let mHtml = ''; if(g.members) g.members.forEach((m, mIdx) => { mHtml += `<div class="member-row" id="m-${gIdx}-${mIdx}"><span class="member-name">${m.name}</span><div class="score-control"><button class="btn-circle btn-minus" onclick="app.scoreMember(${gIdx},${mIdx},-1)">-</button><span class="member-score">${m.score}</span><button class="btn-circle btn-plus" onclick="app.scoreMember(${gIdx},${mIdx},1)">+</button></div></div>`; });
-            let rankClass = ''; const rankIdx = AppState.buzzer.results.findIndex(r => r.groupName === g.name); if (rankIdx === 0) rankClass = 'rank-1'; else if (rankIdx === 1) rankClass = 'rank-2'; else if (rankIdx === 2) rankClass = 'rank-3';
-            const div = document.createElement('div'); div.id = `g-${gIdx}`; div.className = `glass-card group-card ${rankClass}`; div.innerHTML = `<div class="group-rank-badge">#${rankIdx+1}</div><div class="group-header"><span class="group-name">${g.name}</span><div class="score-control"><button class="btn-circle btn-minus" onclick="app.scoreGroup(${gIdx},-1)">-</button><span class="score-display">${g.score}</span><button class="btn-circle btn-plus" onclick="app.scoreGroup(${gIdx},1)">+</button></div></div><div class="member-list">${mHtml}</div>`; c.appendChild(div);
+        // ★★★ 這裡就是原本報錯的地方 (reading 'forEach') ★★★
+        // 加上 || [] 確保它永遠是陣列，不會是 undefined
+        (AppState.groups || []).forEach((g, gIdx) => {
+            let mHtml = ''; 
+            (g.members || []).forEach((m, mIdx) => { 
+                mHtml += `<div class="member-row" id="m-${gIdx}-${mIdx}"><span class="member-name">${m.name}</span><div class="score-control"><button class="btn-circle btn-minus" onclick="app.scoreMember(${gIdx},${mIdx},-1)">-</button><span class="member-score">${m.score}</span><button class="btn-circle btn-plus" onclick="app.scoreMember(${gIdx},${mIdx},1)">+</button></div></div>`; 
+            });
+            
+            let rankClass = ''; 
+            const rankIdx = (AppState.buzzer.results || []).findIndex(r => r.groupName === g.name); 
+            if (rankIdx === 0) rankClass = 'rank-1'; else if (rankIdx === 1) rankClass = 'rank-2'; else if (rankIdx === 2) rankClass = 'rank-3';
+            
+            const div = document.createElement('div'); div.id = `g-${gIdx}`; div.className = `glass-card group-card ${rankClass}`; 
+            div.innerHTML = `<div class="group-rank-badge">#${rankIdx+1}</div><div class="group-header"><span class="group-name">${g.name}</span><div class="score-control"><button class="btn-circle btn-minus" onclick="app.scoreGroup(${gIdx},-1)">-</button><span class="score-display">${g.score}</span><button class="btn-circle btn-plus" onclick="app.scoreGroup(${gIdx},1)">+</button></div></div><div class="member-list">${mHtml}</div>`; c.appendChild(div);
         });
         
         const stateText = document.getElementById('admin-buzzer-state');
-        if(stateText) stateText.innerText = AppState.buzzer.state.toUpperCase(); 
+        if(stateText && AppState.buzzer) stateText.innerText = AppState.buzzer.state.toUpperCase(); 
         
-        let resHtml = ''; AppState.buzzer.results.forEach((r, i) => resHtml += `<div>${i+1}. ${r.groupName}</div>`); 
+        let resHtml = ''; 
+        (AppState.buzzer.results || []).forEach((r, i) => resHtml += `<div>${i+1}. ${r.groupName}</div>`); 
         const resBox = document.getElementById('admin-buzzer-results');
         if(resBox) resBox.innerHTML = resHtml || '(尚未有人搶答)';
         
-        if (AppState.userMode === 'admin' && AppState.buzzer.results.length > 0 && AppState.buzzer.state === 'go') {
+        if (AppState.userMode === 'admin' && AppState.buzzer.results && AppState.buzzer.results.length > 0 && AppState.buzzer.state === 'go') {
              const winnerName = AppState.buzzer.results[0].groupName;
              if (lastShownWinner !== winnerName) {
                  document.getElementById('quick-winner-name').textContent = winnerName;
@@ -497,7 +541,7 @@ const app = {
                  lastShownWinner = winnerName;
              }
         } 
-        if (AppState.buzzer.state !== 'go') document.getElementById('quick-answer-winner-overlay').style.display = 'none';
+        if (AppState.buzzer && AppState.buzzer.state !== 'go') document.getElementById('quick-answer-winner-overlay').style.display = 'none';
         if (AppState.userMode === 'guest') app.buzzer.updateStudentScreen();
     },
     buzzer: {
@@ -512,14 +556,15 @@ const app = {
         enterStudentMode: function() { document.getElementById('student-buzzer-screen').style.display = 'flex'; this.updateStudentScreen(); }, 
         exitStudentMode: function() { document.getElementById('student-buzzer-screen').style.display = 'none'; },
         updateStudentScreen: function() {
+            if(!AppState.buzzer) return;
             const screen = document.getElementById('student-buzzer-screen'); const txt = document.getElementById('buzzer-status-text'); const btn = document.getElementById('buzzer-btn');
             if (this.isSending && AppState.buzzer.state === 'go') { screen.className = `buzzer-state-go`; txt.innerText = "傳送中..."; btn.style.display = 'none'; return; }
             screen.className = `buzzer-state-${AppState.buzzer.state}`;
             if (AppState.buzzer.state === 'idle') { txt.innerText = "老師準備中..."; btn.style.display = 'none'; } 
             else if (AppState.buzzer.state === 'ready') { txt.innerText = "✋ 預備..."; btn.style.display = 'none'; }
             else if (AppState.buzzer.state === 'go') { 
-                const myResult = AppState.buzzer.results.find(r => r.groupName === AppState.myGroup); 
-                if (myResult) { txt.innerText = `🏆 排名: ${AppState.buzzer.results.indexOf(myResult) + 1}`; btn.style.display = 'none'; this.isSending = false;} 
+                const myResult = (AppState.buzzer.results || []).find(r => r.groupName === AppState.myGroup); 
+                if (myResult) { txt.innerText = `🏆 排名: ${(AppState.buzzer.results || []).indexOf(myResult) + 1}`; btn.style.display = 'none'; this.isSending = false;} 
                 else { 
                     txt.innerText = "🔥 快按！"; btn.style.display = 'block'; 
                     if(btn.style.position !== 'absolute') { btn.style.position = 'absolute'; const x = Math.random() * (window.innerWidth - 220); const y = Math.random() * (window.innerHeight - 220); btn.style.left = x + 'px'; btn.style.top = y + 'px'; }
@@ -535,6 +580,9 @@ const app = {
             const newBuzz = { groupName: AppState.myGroup, timestamp: firebase.database.ServerValue.TIMESTAMP };
             db.ref('classroom/buzzer/results').get().then((snapshot) => {
                 let list = snapshot.val() || [];
+                // 轉為 array 確保安全
+                if(typeof list === 'object' && !Array.isArray(list)) list = Object.values(list);
+                
                 if(!list.find(r => r.groupName === AppState.myGroup)) {
                     list.push(newBuzz);
                     db.ref('classroom/buzzer/results').set(list);
@@ -553,7 +601,7 @@ const app = {
     admin: {
         renderManualGroups: function() {
             const c = document.getElementById('manual-group-container'); if(!c) return; c.innerHTML = '';
-            AppState.groups.forEach((g, idx) => {
+            (AppState.groups || []).forEach((g, idx) => {
                 const names = (g.members||[]).map(m => m.name).join('\n');
                 const div = document.createElement('div'); div.className = 'manual-group-item';
                 div.innerHTML = `<div class="manual-group-header"><input type="text" value="${g.name}" id="gn-${idx}" style="width:120px; padding:6px; border:1px solid #ddd; border-radius:6px;"><button class="toggle-btn danger" onclick="app.admin.deleteGroup(${idx})" style="padding:4px 10px;">🗑️</button></div><textarea class="form-control" id="gt-${idx}" style="height:100px; margin-bottom:0;">${names}</textarea>`; c.appendChild(div);
@@ -562,26 +610,31 @@ const app = {
         addGroup: function() { AppState.groups.push({name: `新組別`, score: 0, members: []}); this.renderManualGroups(); },
         deleteGroup: function(idx) { if(confirm("刪除此組？")) { AppState.groups.splice(idx, 1); this.renderManualGroups(); }},
         saveManualGroups: function() {
-            let tempGroups = []; AppState.groups.forEach((g, idx) => { if(!document.getElementById(`gn-${idx}`)) return; let newGroup = { ...g }; newGroup.name = document.getElementById(`gn-${idx}`).value; const text = document.getElementById(`gt-${idx}`).value; newGroup.members = text.split(/\n/).map(n=>n.trim()).filter(n=>n).map(n => { const exist = (g.members||[]).find(old => old.name === n); return { name: n, score: exist ? exist.score : 0 }; }); tempGroups.push(newGroup); }); AppState.groups = tempGroups;
+            let tempGroups = []; 
+            (AppState.groups || []).forEach((g, idx) => { if(!document.getElementById(`gn-${idx}`)) return; let newGroup = { ...g }; newGroup.name = document.getElementById(`gn-${idx}`).value; const text = document.getElementById(`gt-${idx}`).value; newGroup.members = text.split(/\n/).map(n=>n.trim()).filter(n=>n).map(n => { const exist = (g.members||[]).find(old => old.name === n); return { name: n, score: exist ? exist.score : 0 }; }); tempGroups.push(newGroup); }); AppState.groups = tempGroups;
             app.renderDashboard(); app.save(); app.toast("分組已儲存");
         },
         importFromSheet: function() {
             if(!confirm("從試算表載入將會「重置所有分數」，確定嗎？")) return;
             document.getElementById('sync-status').innerText = '⏳ 讀取試算表中...';
+            // 使用原本的 GAS 功能
             fetch(FIXED_GAS_URL + '?action=import_roster', { method: 'GET', redirect: 'follow' })
             .then(r => r.json()).then(data => {
                 if(data.groups) { 
                     AppState.groups = data.groups; 
-                    app.save();
+                    app.save(); // ★ 這裡會把 GAS 抓到的資料寫入 Firebase
                     app.renderDashboard(); 
                     app.admin.renderManualGroups(); 
                     app.toast("匯入成功！"); 
                 } 
                 else { alert(data.error || "匯入失敗"); }
                 document.getElementById('sync-status').innerText = '🟢 連線正常';
-            }).catch(e => alert("連線錯誤"));
+            }).catch(e => {
+                console.error(e);
+                alert("連線錯誤，請檢查 GAS 網址");
+            });
         },
-        exportCSV: function() { let csv = "\uFEFF組別,姓名,個人分,組總分\n"; AppState.groups.forEach(g => { (g.members||[]).forEach(m => csv += `${g.name},${m.name},${m.score},${g.score}\n`); }); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = '成績單.csv'; a.click(); }
+        exportCSV: function() { let csv = "\uFEFF組別,姓名,個人分,組總分\n"; (AppState.groups || []).forEach(g => { (g.members||[]).forEach(m => csv += `${g.name},${m.name},${m.score},${g.score}\n`); }); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = '成績單.csv'; a.click(); }
     },
     sync: {
         listen: function() {
@@ -594,6 +647,8 @@ const app = {
                     if(data.buzzer) AppState.buzzer = data.buzzer;
                     if(data.settings) {
                         AppState.settings.linked = data.settings.linked;
+                        // 如果雲端有存密碼，就同步下來；沒有的話保留本地
+                        if(data.settings.password) AppState.settings.password = data.settings.password;
                     }
                     
                     app.renderDashboard();
@@ -601,9 +656,13 @@ const app = {
                     if(AppState.userMode === 'admin') app.admin.renderManualGroups();
                     
                     const bar = document.getElementById('login-status-bar'); 
-                    if(bar) bar.innerText = "⚡ 即時連線中 (v7)";
+                    if(bar) bar.innerText = "⚡ 即時連線中 (v7.1)";
                     const spinner = document.getElementById('sync-spinner');
                     if(spinner) spinner.style.display = 'none';
+                } else {
+                    // ★ 如果雲端是空的 (剛建立)，就寫入預設值
+                    console.log("Database is empty, initializing...");
+                    app.save();
                 }
             });
         },
@@ -615,8 +674,8 @@ const app = {
             document.querySelector('.fab-menu').classList.remove('show');
             app.switchView('dashboard');
             let targets = [];
-            if (mode === 'group') { targets = AppState.groups.map((g, i) => ({ id: `g-${i}`, name: g.name })); } 
-            else { AppState.groups.forEach((g, gi) => { (g.members||[]).forEach((m, mi) => { targets.push({ id: `m-${gi}-${mi}`, name: m.name }); }); }); }
+            if (mode === 'group') { targets = (AppState.groups || []).map((g, i) => ({ id: `g-${i}`, name: g.name })); } 
+            else { (AppState.groups || []).forEach((g, gi) => { (g.members||[]).forEach((m, mi) => { targets.push({ id: `m-${gi}-${mi}`, name: m.name }); }); }); }
             if (targets.length === 0) return alert("名單為空！");
             document.querySelectorAll('.lottery-active').forEach(e => e.classList.remove('lottery-active'));
             let count = 0; const max = 30 + Math.floor(Math.random() * 10); let speed = 50; let idx = Math.floor(Math.random() * targets.length);
