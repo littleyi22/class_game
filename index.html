@@ -548,45 +548,110 @@ const app = {
         isSending: false, 
         set: function(state) { 
             AppState.buzzer.state = state; 
+            // 老師按下各種按鈕時的邏輯
             if (state === 'idle') { AppState.buzzer.results = []; lastShownWinner = null; } 
             if (state === 'ready') { AudioSys.play('ready'); lastShownWinner = null; }
             if (state === 'go') AudioSys.play('go'); 
             app.save(); 
         },
-        enterStudentMode: function() { document.getElementById('student-buzzer-screen').style.display = 'flex'; this.updateStudentScreen(); }, 
-        exitStudentMode: function() { document.getElementById('student-buzzer-screen').style.display = 'none'; },
+        enterStudentMode: function() { 
+            document.getElementById('student-buzzer-screen').style.display = 'flex'; 
+            this.updateStudentScreen(); 
+        }, 
+        exitStudentMode: function() { 
+            document.getElementById('student-buzzer-screen').style.display = 'none'; 
+        },
         updateStudentScreen: function() {
             if(!AppState.buzzer) return;
-            const screen = document.getElementById('student-buzzer-screen'); const txt = document.getElementById('buzzer-status-text'); const btn = document.getElementById('buzzer-btn');
-            if (this.isSending && AppState.buzzer.state === 'go') { screen.className = `buzzer-state-go`; txt.innerText = "傳送中..."; btn.style.display = 'none'; return; }
+            
+            // ★★★ 關鍵修正：只要不是 GO 狀態，強制解除「傳送中」鎖定 ★★★
+            if (AppState.buzzer.state !== 'go') {
+                this.isSending = false;
+            }
+
+            const screen = document.getElementById('student-buzzer-screen'); 
+            const txt = document.getElementById('buzzer-status-text'); 
+            const btn = document.getElementById('buzzer-btn');
+            
+            // 處理「傳送中」的狀態
+            if (this.isSending && AppState.buzzer.state === 'go') { 
+                screen.className = `buzzer-state-go`; 
+                txt.innerText = "傳送中..."; 
+                btn.style.display = 'none'; 
+                return; 
+            }
+            
+            // 根據狀態改變背景顏色
             screen.className = `buzzer-state-${AppState.buzzer.state}`;
-            if (AppState.buzzer.state === 'idle') { txt.innerText = "老師準備中..."; btn.style.display = 'none'; } 
-            else if (AppState.buzzer.state === 'ready') { txt.innerText = "✋ 預備..."; btn.style.display = 'none'; }
+            
+            if (AppState.buzzer.state === 'idle') { 
+                txt.innerText = "老師準備中..."; 
+                btn.style.display = 'none'; 
+            } 
+            else if (AppState.buzzer.state === 'ready') { 
+                txt.innerText = "✋ 預備..."; 
+                btn.style.display = 'none'; 
+            }
             else if (AppState.buzzer.state === 'go') { 
+                // 檢查自己是不是已經上榜了
                 const myResult = (AppState.buzzer.results || []).find(r => r.groupName === AppState.myGroup); 
-                if (myResult) { txt.innerText = `🏆 排名: ${(AppState.buzzer.results || []).indexOf(myResult) + 1}`; btn.style.display = 'none'; this.isSending = false;} 
-                else { 
-                    txt.innerText = "🔥 快按！"; btn.style.display = 'block'; 
-                    if(btn.style.position !== 'absolute') { btn.style.position = 'absolute'; const x = Math.random() * (window.innerWidth - 220); const y = Math.random() * (window.innerHeight - 220); btn.style.left = x + 'px'; btn.style.top = y + 'px'; }
+                
+                if (myResult) { 
+                    // 已經上榜，顯示排名
+                    txt.innerText = `🏆 排名: ${(AppState.buzzer.results || []).indexOf(myResult) + 1}`; 
+                    btn.style.display = 'none'; 
+                    this.isSending = false;
                 } 
-            } else { btn.style.position = 'static'; }
+                else { 
+                    // 還沒上榜，顯示按鈕
+                    txt.innerText = "🔥 快按！"; 
+                    btn.style.display = 'block'; 
+                    
+                    // 防呆：確保按鈕位置正確
+                    if(btn.style.position !== 'absolute') { 
+                        btn.style.position = 'absolute'; 
+                        const x = Math.random() * (window.innerWidth - 220); 
+                        const y = Math.random() * (window.innerHeight - 220); 
+                        btn.style.left = Math.max(0, x) + 'px'; 
+                        btn.style.top = Math.max(0, y) + 'px'; 
+                    }
+                } 
+            } else { 
+                btn.style.position = 'static'; 
+            }
         },
         studentBuzz: function() { 
             if(!AppState.myGroup) return alert("未選擇組別");
             if(AppState.buzzer.state !== 'go') return; 
+            
+            // 1. 先鎖定按鈕，避免重複按
             this.isSending = true; 
             this.updateStudentScreen(); 
             AudioSys.play('go'); 
+
+            // 2. 準備資料
             const newBuzz = { groupName: AppState.myGroup, timestamp: firebase.database.ServerValue.TIMESTAMP };
+            
+            // 3. 寫入 Firebase
             db.ref('classroom/buzzer/results').get().then((snapshot) => {
                 let list = snapshot.val() || [];
-                // 轉為 array 確保安全
+                // 轉為陣列格式確保安全
                 if(typeof list === 'object' && !Array.isArray(list)) list = Object.values(list);
                 
+                // 檢查是否已經在名單內 (防重複)
                 if(!list.find(r => r.groupName === AppState.myGroup)) {
                     list.push(newBuzz);
-                    db.ref('classroom/buzzer/results').set(list);
+                    db.ref('classroom/buzzer/results').set(list)
+                      .catch(e => {
+                          console.error("寫入失敗", e);
+                          this.isSending = false; // 失敗的話解鎖
+                          this.updateStudentScreen();
+                      });
                 }
+            }).catch(error => {
+                console.error("連線錯誤", error);
+                this.isSending = false;
+                this.updateStudentScreen();
             });
         }
     },
