@@ -387,13 +387,11 @@ const AudioSys = { ctx: null, playTone: function(freq, type, dur) { if (!AppStat
 
 const app = {
     init: function() { 
-        // 預設先給空資料，等待 Firebase 同步
         for(let i=0; i<6; i++) AppState.groups.push({name: `第${i+1}組`, score:0, members:[]}); 
         this.loadLocal(); 
-        document.getElementById('gas-url').value = FIXED_GAS_URL; 
+        const gasInput = document.getElementById('gas-url');
+        if(gasInput) gasInput.value = FIXED_GAS_URL; 
         this.renderDashboard(); 
-        
-        // ★ 啟動 Firebase 監聽 (這是即時同步的關鍵)
         this.sync.listen();
     },
     auth: {
@@ -404,7 +402,6 @@ const app = {
         loginGuest: function() {
             AppState.userMode = 'guest'; this.applyMode();
             const list = document.getElementById('guest-group-list'); list.innerHTML = '';
-            // 這裡改成從現有狀態讀取，Firebase 會自動更新
             AppState.groups.forEach(g => {
                 const btn = document.createElement('button'); btn.className = 'toggle-btn'; btn.style.cssText = 'padding:14px; background:rgba(0,0,0,0.05); width:100%; justify-content:center;'; btn.innerText = g.name;
                 btn.onclick = () => { AppState.myGroup = g.name; document.getElementById('my-group-name').innerText = g.name; document.getElementById('modal-guest-select').classList.remove('open'); app.buzzer.enterStudentMode(); };
@@ -423,40 +420,60 @@ const app = {
             else { alert("密碼太短"); }
         }
     },
-    loadLocal: function() { const d = localStorage.getItem('classDataV7'); if (d) { const p = JSON.parse(d); AppState.settings = Object.assign(AppState.settings, p.settings); } },
-    
-    // ★ 修改存檔邏輯：寫入 Firebase，不再寫入 LocalStorage
+    loadLocal: function() { 
+        const d = localStorage.getItem('classDataV7'); 
+        if (d) { 
+            try {
+                const p = JSON.parse(d); 
+                if(p.settings) AppState.settings = Object.assign(AppState.settings, p.settings); 
+            } catch(e) { console.error("Local data parse error", e); }
+        } 
+    },
     save: function() { 
         if (AppState.userMode === 'guest') return; 
-        localStorage.setItem('classDataV7', JSON.stringify({settings: AppState.settings})); // 只存設定在本地
-        
-        // 寫入 Firebase
+        localStorage.setItem('classDataV7', JSON.stringify({settings: AppState.settings})); 
         db.ref('classroom').set({
             groups: AppState.groups,
             buzzer: AppState.buzzer,
-            settings: { linked: AppState.settings.linked, password: AppState.settings.password } // 敏感資料可選擇不傳
+            settings: { linked: AppState.settings.linked, password: AppState.settings.password }
         });
     },
-    
-    updateUI: function() { document.getElementById('link-status').innerText = AppState.settings.linked ? 'ON' : 'OFF'; document.getElementById('toggle-link').className = `toggle-btn ${AppState.settings.linked ? 'active' : ''}`; document.getElementById('toggle-sound').className = `toggle-btn ${AppState.settings.sound ? 'active-green' : ''}`; },
-    toggleLink: function() { AppState.settings.linked = !AppState.settings.linked; this.updateUI(); this.save(); }, toggleSound: function() { AppState.settings.sound = !AppState.settings.sound; this.updateUI(); this.save(); },
-    
+    // ★★★ 修正後的 updateUI ★★★
+    updateUI: function() { 
+        // 移除了對 link-status 的呼叫，並加入防呆機制
+        const btnLink = document.getElementById('toggle-link');
+        if(btnLink) btnLink.className = `toggle-btn ${AppState.settings.linked ? 'active' : ''}`;
+        
+        const btnSound = document.getElementById('toggle-sound');
+        if(btnSound) btnSound.className = `toggle-btn ${AppState.settings.sound ? 'active-green' : ''}`; 
+        
+        const linkStatusText = document.getElementById('link-status');
+        if(linkStatusText) linkStatusText.innerText = AppState.settings.linked ? 'ON' : 'OFF';
+    },
     switchView: function(v) { 
         document.querySelectorAll('.view-section').forEach(e => e.classList.remove('active')); 
-        document.getElementById('view-'+v).classList.add('active'); 
+        const target = document.getElementById('view-'+v);
+        if(target) target.classList.add('active'); 
         document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active')); 
-        if (event) event.target.classList.add('active'); 
+        if (event && event.target) event.target.classList.add('active'); 
         if(v === 'admin' && AppState.userMode === 'admin') app.admin.renderManualGroups(); 
     },
-    
-    // ★ 分數控制：直接操作 AppState 並觸發 save()，Firebase 會自動同步給所有人
     scoreGroup: function(idx, delta) { if (AppState.userMode === 'guest') return; AppState.groups[idx].score += delta; AudioSys.play('click'); this.save(); },
     scoreMember: function(gIdx, mIdx, delta) { if (AppState.userMode === 'guest') return; AppState.groups[gIdx].members[mIdx].score += delta; if (AppState.settings.linked) AppState.groups[gIdx].score += delta; AudioSys.play('click'); this.save(); },
-    
     renderDashboard: function() {
-        const c = document.getElementById('groups-container'); c.innerHTML = '';
+        const c = document.getElementById('groups-container'); 
+        if(!c) return;
+        c.innerHTML = '';
+        
         const banner = document.getElementById('dashboard-buzzer-banner');
-        if (AppState.buzzer.state !== 'idle') { banner.style.display = 'block'; let html = ''; AppState.buzzer.results.forEach((r, i) => html += `<div>#${i+1} ${r.groupName}</div>`); document.getElementById('buzzer-rank-list').innerHTML = html || '等待搶答...'; } else { banner.style.display = 'none'; }
+        if (AppState.buzzer.state !== 'idle') { 
+            if(banner) banner.style.display = 'block'; 
+            let html = ''; AppState.buzzer.results.forEach((r, i) => html += `<div>#${i+1} ${r.groupName}</div>`); 
+            const rankList = document.getElementById('buzzer-rank-list');
+            if(rankList) rankList.innerHTML = html || '等待搶答...'; 
+        } else { 
+            if(banner) banner.style.display = 'none'; 
+        }
         
         AppState.groups.forEach((g, gIdx) => {
             let mHtml = ''; if(g.members) g.members.forEach((m, mIdx) => { mHtml += `<div class="member-row" id="m-${gIdx}-${mIdx}"><span class="member-name">${m.name}</span><div class="score-control"><button class="btn-circle btn-minus" onclick="app.scoreMember(${gIdx},${mIdx},-1)">-</button><span class="member-score">${m.score}</span><button class="btn-circle btn-plus" onclick="app.scoreMember(${gIdx},${mIdx},1)">+</button></div></div>`; });
@@ -464,11 +481,13 @@ const app = {
             const div = document.createElement('div'); div.id = `g-${gIdx}`; div.className = `glass-card group-card ${rankClass}`; div.innerHTML = `<div class="group-rank-badge">#${rankIdx+1}</div><div class="group-header"><span class="group-name">${g.name}</span><div class="score-control"><button class="btn-circle btn-minus" onclick="app.scoreGroup(${gIdx},-1)">-</button><span class="score-display">${g.score}</span><button class="btn-circle btn-plus" onclick="app.scoreGroup(${gIdx},1)">+</button></div></div><div class="member-list">${mHtml}</div>`; c.appendChild(div);
         });
         
-        document.getElementById('admin-buzzer-state').innerText = AppState.buzzer.state.toUpperCase(); 
-        let resHtml = ''; AppState.buzzer.results.forEach((r, i) => resHtml += `<div>${i+1}. ${r.groupName}</div>`); 
-        document.getElementById('admin-buzzer-results').innerHTML = resHtml || '(尚未有人搶答)';
+        const stateText = document.getElementById('admin-buzzer-state');
+        if(stateText) stateText.innerText = AppState.buzzer.state.toUpperCase(); 
         
-        // 勝利特效邏輯
+        let resHtml = ''; AppState.buzzer.results.forEach((r, i) => resHtml += `<div>${i+1}. ${r.groupName}</div>`); 
+        const resBox = document.getElementById('admin-buzzer-results');
+        if(resBox) resBox.innerHTML = resHtml || '(尚未有人搶答)';
+        
         if (AppState.userMode === 'admin' && AppState.buzzer.results.length > 0 && AppState.buzzer.state === 'go') {
              const winnerName = AppState.buzzer.results[0].groupName;
              if (lastShownWinner !== winnerName) {
@@ -481,7 +500,6 @@ const app = {
         if (AppState.buzzer.state !== 'go') document.getElementById('quick-answer-winner-overlay').style.display = 'none';
         if (AppState.userMode === 'guest') app.buzzer.updateStudentScreen();
     },
-    
     buzzer: {
         isSending: false, 
         set: function(state) { 
@@ -489,8 +507,6 @@ const app = {
             if (state === 'idle') { AppState.buzzer.results = []; lastShownWinner = null; } 
             if (state === 'ready') { AudioSys.play('ready'); lastShownWinner = null; }
             if (state === 'go') AudioSys.play('go'); 
-            
-            // 寫入 Firebase
             app.save(); 
         },
         enterStudentMode: function() { document.getElementById('student-buzzer-screen').style.display = 'flex'; this.updateStudentScreen(); }, 
@@ -510,38 +526,17 @@ const app = {
                 } 
             } else { btn.style.position = 'static'; }
         },
-        // ★ 核心搶答邏輯改為 Firebase Push
         studentBuzz: function() { 
             if(!AppState.myGroup) return alert("未選擇組別");
-            if(AppState.buzzer.state !== 'go') return; // 防呆
-            
+            if(AppState.buzzer.state !== 'go') return; 
             this.isSending = true; 
             this.updateStudentScreen(); 
             AudioSys.play('go'); 
-            
-            // 建立一個新搶答記錄
             const newBuzz = { groupName: AppState.myGroup, timestamp: firebase.database.ServerValue.TIMESTAMP };
-            
-            // 先讀取目前的 results (為求簡單，我們讓學生端直接把自己的名字推進陣列，實際應用建議用 transaction，但課堂用這樣足夠)
-            const currentResults = AppState.buzzer.results || [];
-            
-            // 如果我已經在裡面了就不要再送 (防止重複按)
-            if(currentResults.find(r => r.groupName === AppState.myGroup)) return;
-
-            // 注意：這裡我們改用「交易」來確保排名準確，或者直接更新整個 buzzer 物件
-            // 為了簡化，學生端只負責寫入「自己的搶答請求」，由老師端或 Firebase 規則處理比較複雜，
-            // 但這裡我們採用最簡單做法：學生更新 AppState.buzzer.results
-            
-            // 更安全的做法：寫入獨立節點 /buzzer_queue/，老師端監聽並排序。
-            // 但為了相容您的舊邏輯，我們採用「樂觀更新」：
-            
-            // 1. 取得目前資料庫的 buzzer/results
             db.ref('classroom/buzzer/results').get().then((snapshot) => {
                 let list = snapshot.val() || [];
-                // 檢查是否已搶過
                 if(!list.find(r => r.groupName === AppState.myGroup)) {
                     list.push(newBuzz);
-                    // 寫回
                     db.ref('classroom/buzzer/results').set(list);
                 }
             });
@@ -557,7 +552,7 @@ const app = {
     },
     admin: {
         renderManualGroups: function() {
-            const c = document.getElementById('manual-group-container'); c.innerHTML = '';
+            const c = document.getElementById('manual-group-container'); if(!c) return; c.innerHTML = '';
             AppState.groups.forEach((g, idx) => {
                 const names = (g.members||[]).map(m => m.name).join('\n');
                 const div = document.createElement('div'); div.className = 'manual-group-item';
@@ -571,14 +566,12 @@ const app = {
             app.renderDashboard(); app.save(); app.toast("分組已儲存");
         },
         importFromSheet: function() {
-            // ★ 這裡保留 GAS 功能，從 Sheet 讀取後寫入 Firebase
             if(!confirm("從試算表載入將會「重置所有分數」，確定嗎？")) return;
             document.getElementById('sync-status').innerText = '⏳ 讀取試算表中...';
             fetch(FIXED_GAS_URL + '?action=import_roster', { method: 'GET', redirect: 'follow' })
             .then(r => r.json()).then(data => {
                 if(data.groups) { 
                     AppState.groups = data.groups; 
-                    // 立即存入 Firebase
                     app.save();
                     app.renderDashboard(); 
                     app.admin.renderManualGroups(); 
@@ -591,9 +584,9 @@ const app = {
         exportCSV: function() { let csv = "\uFEFF組別,姓名,個人分,組總分\n"; AppState.groups.forEach(g => { (g.members||[]).forEach(m => csv += `${g.name},${m.name},${m.score},${g.score}\n`); }); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = '成績單.csv'; a.click(); }
     },
     sync: {
-        // ★ Firebase 監聽核心：這取代了原本的 loop
         listen: function() {
-            document.getElementById('sync-status').innerText = '🔥 Firebase 連線中';
+            const statusEl = document.getElementById('sync-status');
+            if(statusEl) statusEl.innerText = '🔥 Firebase 連線中';
             db.ref('classroom').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -601,20 +594,20 @@ const app = {
                     if(data.buzzer) AppState.buzzer = data.buzzer;
                     if(data.settings) {
                         AppState.settings.linked = data.settings.linked;
-                        // 不覆蓋本地密碼設定，避免衝突
                     }
                     
                     app.renderDashboard();
                     app.updateUI();
                     if(AppState.userMode === 'admin') app.admin.renderManualGroups();
                     
-                    const statusEl = document.getElementById('login-status-bar'); 
-                    if(statusEl) statusEl.innerText = "⚡ 即時連線中 (v7)";
-                    document.getElementById('sync-spinner').style.display = 'none';
+                    const bar = document.getElementById('login-status-bar'); 
+                    if(bar) bar.innerText = "⚡ 即時連線中 (v7)";
+                    const spinner = document.getElementById('sync-spinner');
+                    if(spinner) spinner.style.display = 'none';
                 }
             });
         },
-        manualSync: function() { app.save(); } // 備用
+        manualSync: function() { app.save(); }
     },
     lottery: {
         timer: null,
@@ -638,7 +631,7 @@ const app = {
             step();
         }
     },
-    toast: function(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 2000); }
+    toast: function(msg) { const t = document.getElementById('toast'); if(t) {t.innerText = msg; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 2000);} }
 };
 app.init();
 </script>
